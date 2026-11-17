@@ -1,34 +1,48 @@
 # qRepli
 
-**Русский** | [English](README.en.md)
+**English** | [Русский](README.ru.md)
 
-> Проект переименовывается в **qRepli**. В командах ниже пока используются существующие имя цели CMake и имя исполняемого файла `TransPlayer`. Инструкции соответствуют конфигурации, проверенной при подготовке документации; после завершения переименования эти имена нужно обновить.
+A desktop video player built with **C++20, Qt Quick and Qt Multimedia**, with local English speech recognition powered by **whisper.cpp**.
 
-Минимальный desktop-плеер на **C++20 / Qt Quick / Qt Multimedia**.
+> The project is being renamed to **qRepli**. The commands below use the existing CMake target and executable name, `TransPlayer`. They describe the build configuration reviewed for this documentation; update those names once the rename is complete.
 
-Текущая версия: просмотр локального видео, **локальное распознавание английской речи через whisper.cpp** и две дорожки SRT. Автоматический перевод на русский пока **не подключён**; русскую дорожку можно загрузить из готового файла. План следующих этапов — в [PLAN.md](PLAN.md).
+**Current status:** local video playback, English transcription and two SRT tracks. Automatic English-to-Russian translation is **not implemented yet**; translated subtitles can be loaded from an existing SRT file.
 
-## Что работает
+## Features
 
-- Открытие видео через диалог, перетаскивание или командную строку.
-- Воспроизведение, пауза, перемотка, громкость, полный экран, выбор аудиодорожки при наличии нескольких.
-- Независимая загрузка оригинального SRT и SRT с переводом; показ по времени видео.
-- Включение и выключение каждой дорожки субтитров.
-- Список реплик с подсветкой текущей и переходом по клику.
-- UTF-8, BOM, CRLF, многострочные и перекрывающиеся реплики; базовое HTML-оформление SRT преобразуется в обычный текст.
-- Сообщения об ошибках видео/субтитров. Некорректный SRT не заменяет загруженную дорожку; смена видео очищает старые субтитры.
-- Распознавание английской речи с текущей позиции, подготовка фрагментов впереди просмотра, остановка и перезапуск после перемотки.
-- Подготовка первого фрагмента перед возобновлением видео; при нехватке готовых субтитров просмотр ожидает обработку. Ручная пауза во время подготовки сохраняется.
-- Выбор модели Whisper, пути к FFmpeg и режима GPU/CPU. На Apple Silicon используется Metal, если включён GPU.
-- Сохранение оригинальных, в том числе распознанных, субтитров в SRT.
+- Open local videos using a file dialog, drag and drop, or the command line.
+- Play, pause, seek, adjust volume, enter fullscreen and select an audio track when multiple tracks are available.
+- Load original and translated SRT tracks independently; toggle each track on screen.
+- Browse a transcript with active-line highlighting and click a line to seek to it.
+- Read UTF-8 SRT files, including BOM, CRLF, multiline and overlapping cues. Basic HTML formatting is converted to plain text.
+- Transcribe English speech locally from the current position and prepare subtitles ahead of playback.
+- Pause playback while the required interval is being processed; preserve a manual pause when results arrive.
+- Select a Whisper model, FFmpeg executable and GPU/CPU mode. Apple Silicon can use Metal.
+- Export available original subtitles, including generated transcripts, to SRT.
+- Report playback, subtitle and transcription errors. Invalid SRT input does not replace a loaded track.
 
-Программа не отправляет видео или текст в сеть. Субтитры живут в памяти, пока не сохранены через «Сохранить SRT». В настройках сохраняются громкость, пути к модели/FFmpeg и выбор GPU.
+Runtime processing does not upload video, audio or text. Subtitles remain in memory until exported. Volume, model/FFmpeg paths and the GPU preference are saved in application settings.
 
-## Сборка
+## Requirements and platform status
 
-Нужны CMake 3.25+ для команд с presets (3.24+ для ручного конфигурирования), компилятор C/C++20 и Qt 6.8+ с модулями **Quick, QuickControls2, Multimedia**, а для тестов — **Test**. В этой среде проверены macOS ARM64, AppleClang 17 и Qt 6.11.2 из Homebrew. Для распознавания нужен отдельно установленный исполняемый файл `ffmpeg`.
+| Dependency | Requirement |
+| --- | --- |
+| Compiler | C++20 support and a C compiler for native dependencies |
+| CMake | 3.25+ for the supplied presets; 3.24+ for manual configuration |
+| Qt | 6.8+ with Quick, QuickControls2 and Multimedia; Test when tests are enabled |
+| Build tool | Make, Ninja or a suitable platform generator |
+| FFmpeg | A separate executable for speech recognition |
+| Whisper model | Local `ggml-base.en.bin`, approximately 148 MB |
 
-При первом конфигурировании CMake скачивает закреплённую версию whisper.cpp v1.9.5 и проверяет SHA-256 архива. Модели автоматически при сборке не скачиваются. Preset `dev` использует RelWithDebInfo для оптимизированного инференса. Для плеера без ASR задайте `-DQREPLI_WHISPER=OFF`.
+The presets use schema version 6, which requires CMake 3.25+. See the [CMake presets documentation](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html).
+
+Development builds have been verified on macOS ARM64 with AppleClang 17 and Qt 6.11.2 from Homebrew. Windows and Linux use portable code paths but have **not been build/run verified**. Standalone distribution packages have not been validated on clean machines.
+
+The first ASR-enabled CMake configuration downloads pinned whisper.cpp v1.9.5 from GitHub and verifies its SHA-256. Model downloads are separate. Once dependencies and the model are installed, runtime operation is offline.
+
+## Build
+
+Run commands from the project root.
 
 ```sh
 cmake --preset dev
@@ -36,21 +50,15 @@ cmake --build --preset dev --parallel
 ctest --preset dev
 ```
 
-Если CMake не находит Qt, укажите путь к установленному kit:
+The `dev` preset builds into `build/`, uses `RelWithDebInfo` and enables tests. If Qt is not found, set the path to your Qt kit during configuration:
 
 ```sh
-cmake --preset dev -DCMAKE_PREFIX_PATH=/path/to/Qt/6.x/macos
+cmake --preset dev -DCMAKE_PREFIX_PATH=/path/to/Qt/kit
 ```
 
-В Qt Creator откройте `CMakeLists.txt`, выберите desktop kit Qt 6.8+ и запустите цель `qRepli`.
+### macOS
 
-Основной код использует переносимые API Qt и whisper.cpp. Сборка и запуск на Windows/Linux ещё не проверены. В multi-config генераторе используйте `--config RelWithDebInfo` для сборки и `-C RelWithDebInfo` для CTest. Для сборки без тестов задайте `-DBUILD_TESTING=OFF`.
-
-### Подготовка окружения
-
-Все команды ниже выполняются из корня проекта. Для первой сборки с ASR нужен доступ к GitHub, для загрузки модели — к Hugging Face.
-
-На macOS установите Xcode Command Line Tools (`xcode-select --install`). Если используете Homebrew:
+Install Xcode Command Line Tools with `xcode-select --install`. If using Homebrew:
 
 ```sh
 brew install cmake qt ffmpeg
@@ -59,16 +67,22 @@ cmake --build --preset dev --parallel
 ctest --preset dev
 ```
 
-На Windows установите Qt 6.8+ с указанными выше модулями и компилятором, соответствующим kit (например, MSVC), CMake и FFmpeg. Выполняйте команды в окружении выбранного компилятора. На Linux нужны GCC/Clang с C++20, CMake, Make или Ninja, Qt 6.8+ и FFmpeg; версия Qt из системного репозитория может оказаться слишком старой. Для обеих систем задайте `CMAKE_PREFIX_PATH` к своему Qt kit. Эти платформы пока не проверены.
+### Windows and Linux
 
-Для генераторов Visual Studio, Xcode и Ninja Multi-Config:
+On Windows, install a Qt 6.8+ desktop kit with the required modules, its matching compiler (for example MSVC), CMake and FFmpeg. Run commands in the selected compiler environment. On Linux, install a C++20-capable GCC/Clang toolchain, CMake, Make or Ninja, Qt 6.8+ and FFmpeg. Distribution Qt packages may be older than the required version. Set `CMAKE_PREFIX_PATH` to the selected kit.
+
+For multi-configuration generators such as Visual Studio, Xcode or Ninja Multi-Config:
 
 ```sh
 cmake --build --preset dev --config RelWithDebInfo --parallel
 ctest --preset dev -C RelWithDebInfo
 ```
 
-Ручная сборка без presets (в отдельной папке):
+These platform instructions are starting points; Windows and Linux remain unverified.
+
+### Manual configuration and Qt Creator
+
+To avoid presets, use a separate build directory:
 
 ```sh
 cmake -S . -B build-manual -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=ON
@@ -76,87 +90,149 @@ cmake --build build-manual --config RelWithDebInfo --parallel
 ctest --test-dir build-manual -C RelWithDebInfo --output-on-failure
 ```
 
-При необходимости добавьте `-DCMAKE_PREFIX_PATH=/path/to/Qt/kit` к конфигурированию. Опции `-DQREPLI_WHISPER=OFF` и `-DBUILD_TESTING=OFF` также передаются на этом шаге. Для сборки без Whisper модель и FFmpeg для ASR не нужны; зависимости медиабэкенда Qt остаются.
+Add `-DCMAKE_PREFIX_PATH=/path/to/Qt/kit` if needed. Configure with `-DTRANSPLAYER_WHISPER=OFF` for playback and SRT support without ASR, or `-DBUILD_TESTING=OFF` to omit tests. An ASR-disabled build does not need the ASR model or external FFmpeg executable; Qt's media backend still has its own dependencies.
 
-## Запуск на macOS
+In Qt Creator, open `CMakeLists.txt`, select a Qt 6.8+ desktop kit and run the `TransPlayer` target.
+
+## Run
+
+On macOS:
 
 ```sh
-open build/qRepli.app
+open build/TransPlayer.app
 ```
 
-Можно сразу передать видео и две дорожки:
+Open a video with original and translated subtitles:
 
 ```sh
-./build/qRepli.app/Contents/MacOS/qRepli \
+./build/TransPlayer.app/Contents/MacOS/TransPlayer \
   /absolute/path/video.mp4 \
   --subtitles /absolute/path/video.en.srt \
   --translation /absolute/path/video.ru.srt
 ```
 
-На Linux executable находится в `build/qRepli`, на Windows путь зависит от генератора, например `build/RelWithDebInfo/qRepli.exe`.
+On Linux, the usual single-configuration executable is `build/TransPlayer`. On Windows, the path depends on the generator, for example `build/RelWithDebInfo/TransPlayer.exe`. Multi-configuration generators may also add a configuration directory on other platforms.
 
-Это сборка для разработки: она использует установленный Qt. Самостоятельный дистрибутив с библиотеками пока не подготовлен. Поддерживаемые форматы зависят от медиабэкенда Qt и кодеков. У установленной здесь сборки Qt доступен backend `darwin`; FFmpeg backend Qt не обнаружен. Распознавание не зависит от него: отдельный FFmpeg-процесс извлекает аудио через QProcess. Лицензии зависимостей перечислены в [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-### Параметры командной строки
-
-| Аргумент | Назначение |
+| Argument | Purpose |
 | --- | --- |
-| `video` | Необязательный путь к локальному видео |
-| `--subtitles file` | Оригинальная дорожка SRT |
-| `--translation file` | Готовая переведённая дорожка SRT |
-| `--model file` | Локальная модель Whisper |
-| `--ffmpeg file` | Путь к исполняемому файлу FFmpeg |
-| `--transcribe` | Запросить распознавание после получения длительности видео |
-| `--help`, `--version` | Справка или версия |
+| `video` | Optional local video path |
+| `--subtitles file` | Original SRT track |
+| `--translation file` | Existing translated SRT track |
+| `--model file` | Local Whisper model |
+| `--ffmpeg file` | FFmpeg executable path |
+| `--transcribe` | Request transcription once video duration becomes available |
+| `--help`, `--version` | Print help or version |
 
-## Локальное распознавание
+CLI model and FFmpeg paths are also saved in application settings.
 
-Один раз загрузите `base.en` (148 МБ) с проверкой контрольной суммы:
+## Local speech recognition
+
+Download the English `base.en` model with checksum verification:
 
 ```sh
 cmake -P cmake/DownloadWhisperModel.cmake
 ```
 
-Скрипт сохраняет модель в `models/ggml-base.en.bin`; каталог исключён из Git. После установки зависимостей и модели приложение работает без интернета.
+The model is saved to `models/ggml-base.en.bin`; the directory is excluded from Git. Re-running the script verifies an existing file.
 
-1. Откройте видео с английской аудиодорожкой.
-2. В «Настройки речи» выберите `ggml-base.en.bin`. FFmpeg обычно определяется автоматически; при необходимости укажите путь к нему.
-3. Нажмите «Распознать речь». Первый фрагмент обрабатывается перед просмотром. Если видео было на паузе, оно останется на паузе.
-4. Используйте «Сохранить SRT», чтобы сохранить подготовленные оригинальные субтитры.
+1. Open a video with an English audio track.
+2. Open speech settings and choose `ggml-base.en.bin`. FFmpeg is usually detected automatically; select its executable if necessary.
+3. Start speech recognition. Playback waits for the first required interval; a manual pause remains in effect.
+4. Export the generated original subtitles using the SRT save action.
 
-Запуск сразу с распознаванием:
+Or start from the command line:
 
 ```sh
-./build/qRepli.app/Contents/MacOS/qRepli /absolute/path/video.mp4 \
+./build/TransPlayer.app/Contents/MacOS/TransPlayer /absolute/path/video.mp4 \
   --model models/ggml-base.en.bin --transcribe
 ```
 
-Опция `--ffmpeg /absolute/path/ffmpeg` переопределяет путь к декодеру. Выбранные через CLI пути также сохраняются в настройках.
+### Current limitations
 
-Текущие ограничения ASR:
+- English transcription only; automatic EN→RU translation is pending.
+- Audio is extracted in windows of up to 20 seconds as mono 16 kHz float PCM. The next window starts only when its beginning is at most 30 seconds ahead of playback, allowing approximately 50 seconds of prepared audio coverage.
+- Basic silence and no-speech filtering is implemented. Full VAD, overlapping windows and cross-window phrase repair are not implemented; music and noise can produce incorrect text.
+- Seeking outside the prepared interval clears the generated track and restarts near the new position. There is no persistent transcript cache. Export includes only text already prepared.
+- Whisper timestamps may be inaccurate. Unusual containers, shifted audio and track matching between Qt and FFmpeg need broader validation.
+- Initial Metal shader preparation can take longer. Performance has been checked on short synthetic samples, not full-length movies.
 
-- Только английская транскрипция; перевод EN→RU пока отсутствует.
-- Аудио извлекается окнами до 20 секунд, mono 16 kHz float PCM; новое окно запускается при опережении не более 30 секунд. Таким образом, подготовленный запас ограничен примерно 50 секундами, плюс сохраняется текст уже обработанных реплик.
-- Есть отсечение практически полной тишины и фильтр вероятности отсутствия речи. Полноценный VAD, перекрытие окон и исправление разрезанных фраз ещё не реализованы; музыка и шум могут давать ошибки.
-- При перемотке за пределы готового участка текущая ASR-дорожка сбрасывается и обработка начинается около новой позиции. Постоянного кэша пока нет. Экспорт сохраняет только уже подготовленный текст.
-- Тайминги берутся из Whisper и могут быть неточными. Необычные контейнеры, смещённые дорожки и соответствие нескольких дорожек между Qt и FFmpeg требуют расширенной проверки.
-- Первый запуск Metal может дольше готовить шейдеры. Оптимизации оценивались только на небольших синтетических примерах, а не на фильмах.
+## Controls
 
-## Управление
-
-| Действие | Клавиши |
+| Action | Shortcut |
 | --- | --- |
-| Открыть видео | Cmd+O на macOS / Ctrl+O на Windows и Linux |
-| Пауза / воспроизведение | Пробел |
-| Назад / вперёд на 5 секунд | ← / → |
-| Полный экран | F11 или двойной клик по видео |
-| Выйти из полного экрана | Esc |
+| Open video | Cmd+O on macOS / Ctrl+O on Windows and Linux |
+| Play / pause | Space |
+| Seek backward / forward 5 seconds | Left / Right arrow |
+| Fullscreen | F11 or double-click the video |
+| Leave fullscreen | Esc |
 
-Кнопки «Оригинал SRT» и «Перевод SRT» загружают существующие файлы. Они не запускают автоматический перевод. При перетаскивании SRT загружается дорожка оригинала. Файл должен быть в UTF-8 и не больше 8 МБ.
+The original/translation SRT buttons load existing files; they do not perform translation. Dropping an SRT loads the original track. SRT files must be UTF-8 and no larger than 8 MB.
 
-## Воспроизводимый пример
+## Installation and deployment
 
-Для проверки интерфейса в репозитории есть две искусственные дорожки `tests/fixtures/demo.*.srt`. Создайте 30-секундное тестовое видео (нужен `ffmpeg`):
+No ready-made installers or automated standalone packaging are provided. The following preparation steps have not been verified on clean target machines. Use deployment tools from the same Qt kit and architecture used for compilation.
+
+### Install the build
+
+```sh
+cmake --install build --config RelWithDebInfo --prefix dist
+```
+
+This installs `dist/TransPlayer.app` on macOS, `dist/bin/TransPlayer.exe` on Windows, or `dist/bin/TransPlayer` on Linux. The current install target installs the application but does **not** automatically collect Qt dependencies, the external FFmpeg executable or the model.
+
+### macOS
+
+After installation, run your Qt kit's deployment tool:
+
+```sh
+/path/to/Qt/kit/bin/macdeployqt dist/TransPlayer.app -qmldir=qml
+open dist/TransPlayer.app
+```
+
+The tool collects Qt libraries, plugins and QML dependencies. Validate the resulting bundle without the development SDK. Signing and notarization are not configured in this project. [Qt macOS deployment](https://doc.qt.io/qt-6/macos-deployment.html).
+
+### Windows
+
+In PowerShell with the Qt/MSVC environment configured:
+
+```powershell
+& "C:/Qt/6.x/msvc2022_64/bin/windeployqt.exe" --release --qmldir qml dist/bin/TransPlayer.exe
+```
+
+Replace the kit path. Distribute the entire prepared directory, not just the EXE. MSVC distributions should include installation of the official Visual C++ Redistributable. [Qt Windows deployment](https://doc.qt.io/qt-6/windows-deployment.html).
+
+### Linux
+
+For a local installation, provide compatible Qt libraries, QML modules and platform/multimedia plugins on the target system, then run `dist/bin/TransPlayer`. A single executable is not a portable package. Standalone distribution needs separate packaging and library/plugin search-path configuration. AppImage, DEB and RPM configurations are not included. [Qt Linux deployment](https://doc.qt.io/qt-6/linux-deployment.html).
+
+### Model and FFmpeg on the target machine
+
+1. Install FFmpeg for the target OS and architecture. ASR requires an external executable independently of any FFmpeg libraries used by Qt Multimedia.
+2. Copy the verified `ggml-base.en.bin` model or download it using the script from the source tree.
+3. Select the model's absolute path and, if needed, FFmpeg's path in speech settings. Automatic discovery depends on the working directory and PATH, so explicitly select paths after moving the application.
+4. Check playback, audio, transcription and SRT export on a short English video. Repeat with networking disabled to verify offline operation.
+
+Include the relevant dependency licenses when distributing binaries: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Supported media formats depend on Qt's media backend and codecs. The development macOS environment used the `darwin` backend. ASR reads audio through its separate FFmpeg process and does not require Qt's FFmpeg backend.
+
+## Testing
+
+The standard CTest suites cover subtitles, the player and transcription infrastructure. Real-model tests are separate so regular tests do not require a 148 MB model. Prepare a short English clip containing the word “video” at the path used below:
+
+```sh
+TRANSPLAYER_TEST_MODEL="$PWD/models/ggml-base.en.bin" \
+TRANSPLAYER_TEST_AUDIO="$PWD/build/speech-demo.mp4" \
+./build/test_transcription realModelSmokeTest
+
+TRANSPLAYER_TEST_MODEL="$PWD/models/ggml-base.en.bin" \
+TRANSPLAYER_TEST_AUDIO="$PWD/build/speech-demo.mp4" \
+./build/test_player realTranscriptionAndSourceChange
+```
+
+These examples use POSIX shell syntax. The media file is a local test artifact, not a bundled sample. Adjust executable paths for multi-configuration builds. See [QA notes](docs/QA.md) for the longer scenario.
+
+For a reproducible playback/SRT demo, create a test-pattern video with a quiet tone:
 
 ```sh
 ffmpeg -hide_banner -loglevel error -y \
@@ -165,95 +241,33 @@ ffmpeg -hide_banner -loglevel error -y \
   -t 30 -c:v libx264 -preset ultrafast -crf 28 \
   -c:a aac -af 'volume=0.03' -movflags +faststart build/demo.mp4
 
-./build/qRepli.app/Contents/MacOS/qRepli build/demo.mp4 \
+./build/TransPlayer.app/Contents/MacOS/TransPlayer build/demo.mp4 \
   --subtitles tests/fixtures/demo.en.srt \
   --translation tests/fixtures/demo.ru.srt
 ```
 
-Это тестовая таблица с тихим тоном, а не пример распознавания речи. Субтитры подготовлены вручную для проверки таймингов и управления.
+This checks manually prepared subtitle timing and playback, not speech recognition.
 
-## Структура
+## Troubleshooting
 
-- `src/playercontroller.*` — QMediaPlayer, управление воспроизведением, загрузка дорожек и сообщения об ошибках.
-- `src/subtitles.*` — разбор SRT и поиск реплик по временной шкале.
-- `src/subtitlemodel.*` — QAbstractListModel для боковой панели.
-- `src/transcription.*` — фоновый Whisper, ограничение опережения, отмена и отбрасывание устаревших результатов.
-- `src/audioextractor.*` — независимое получение PCM через FFmpeg без shell и временных WAV.
-- `qml/` — интерфейс и видеовывод.
-- `tests/` — тесты парсера, модели и реального воспроизведения локального WAV через Qt Multimedia.
-
-Обычный CTest проверяет также извлечение аудио, отмену и ошибки ASR. Проверки реальной модели выполняются отдельно, чтобы обычные тесты не требовали загрузки 148 МБ:
-
-```sh
-QREPLI_TEST_MODEL="$PWD/models/ggml-base.en.bin" \
-QREPLI_TEST_AUDIO="$PWD/build/speech-demo.mp4" \
-./build/test_transcription realModelSmokeTest
-
-QREPLI_TEST_MODEL="$PWD/models/ggml-base.en.bin" \
-QREPLI_TEST_AUDIO="$PWD/build/speech-demo.mp4" \
-./build/test_player realTranscriptionAndSourceChange
-```
-
-Для этих команд нужен короткий ролик с английским словом «video». `build/speech-demo.mp4` — локальный тестовый артефакт, а не поставляемый с проектом ролик; подготовьте свой файл по этому пути. Примеры используют синтаксис POSIX shell; для multi-config сборки скорректируйте пути к тестам. Проверка длинного сценария описана в [docs/QA.md](docs/QA.md).
-
-Следующий этап — локальный EN→RU перевод полученного текста и улучшение сегментации речи.
-
-Подробный разбор текущей логики и четыре редактируемые схемы Excalidraw — в [docs/PROGRAM_LOGIC.md](docs/PROGRAM_LOGIC.md).
-
-## Установка и развёртывание
-
-Готовых установщиков и автоматизированной упаковки пока нет. Ниже — инструкции подготовки; перенос на чистую машину ещё не проверен. Используйте инструменты deployment из того же Qt kit и той же архитектуры, что использовались при сборке.
-
-### Установка из сборки
-
-```sh
-cmake --install build --config RelWithDebInfo --prefix dist
-```
-
-Результат: `dist/qRepli.app` на macOS, `dist/bin/qRepli.exe` на Windows, `dist/bin/qRepli` на Linux. Текущий install target копирует приложение, но не собирает автоматически Qt-зависимости, внешний FFmpeg и модель.
-
-### macOS
-
-После установки в `dist` выполните инструмент своего Qt kit:
-
-```sh
-/path/to/Qt/kit/bin/macdeployqt dist/qRepli.app -qmldir=qml
-open dist/qRepli.app
-```
-
-`macdeployqt` добавляет Qt-библиотеки, плагины и QML-зависимости. Для распространения проверьте bundle на машине без SDK; подпись и notarization в проекте не настроены. [Qt: macOS deployment](https://doc.qt.io/qt-6/macos-deployment.html).
-
-### Windows
-
-В PowerShell, в настроенном окружении Qt/MSVC:
-
-```powershell
-& "C:/Qt/6.x/msvc2022_64/bin/windeployqt.exe" --release --qmldir qml dist/bin/qRepli.exe
-```
-
-Замените путь на свой kit. Распространяйте всю подготовленную папку, а не один EXE. Для MSVC предусмотрите официальный Visual C++ Redistributable. [Qt: Windows deployment](https://doc.qt.io/qt-6/windows-deployment.html).
-
-### Linux
-
-Для локальной установки обеспечьте наличие совместимых Qt-библиотек, QML-модулей и плагинов платформы/мультимедиа в целевой системе, затем запускайте `dist/bin/qRepli`. Один бинарник не является переносимым пакетом. Для автономного распространения потребуется отдельно настроить пакетирование, пути поиска библиотек и плагинов; конфигурации AppImage, DEB и RPM пока отсутствуют. [Qt: Linux deployment](https://doc.qt.io/qt-6/linux-deployment.html).
-
-### Модель и FFmpeg на целевом компьютере
-
-1. Установите FFmpeg для ОС и архитектуры пользователя. Внешний исполняемый файл для ASR нужен отдельно от библиотек FFmpeg, которые может использовать Qt Multimedia.
-2. Скопируйте проверенный `ggml-base.en.bin` либо загрузите его скриптом из исходников.
-3. В настройках приложения выберите абсолютный путь к модели и при необходимости путь к FFmpeg. Автоматическое обнаружение зависит от рабочей папки и PATH, поэтому при переносе лучше выбрать их явно.
-4. Проверьте воспроизведение, звук, распознавание и экспорт SRT на коротком английском видео. Затем отключите сеть и повторите запуск для проверки локального режима.
-
-При включении зависимостей в дистрибутив приложите соответствующие лицензии: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-## Решение типичных проблем
-
-| Проблема | Что проверить |
+| Problem | Check |
 | --- | --- |
-| CMake не находит Qt | Версию Qt, установленные модули и `CMAKE_PREFIX_PATH` выбранного kit |
-| Ошибка чтения presets | CMake 3.25+ либо ручное конфигурирование без presets |
-| FFmpeg не найден | Установку исполняемого файла и полный путь в настройках речи |
-| Модель не загружается | Файл `ggml-base.en.bin`; повторный запуск скрипта проверяет SHA-256 |
-| Видео не воспроизводится после переноса | Qt-плагины, медиабэкенд и поддерживаемые им кодеки |
-| Проблема с GPU | Выключить GPU в настройках и повторно запустить распознавание |
-| Нет русского текста | Автоперевод ещё не подключён; загрузите готовый русский SRT |
+| CMake cannot find Qt | Qt version, installed modules and the selected kit's `CMAKE_PREFIX_PATH` |
+| Preset parsing fails | Use CMake 3.25+ or configure manually without presets |
+| FFmpeg not found | Install the executable and select its full path in speech settings |
+| Model does not load | Select `ggml-base.en.bin`; re-run the download script to verify SHA-256 |
+| Playback fails after deployment | Qt plugins, media backend and available codecs |
+| GPU problems | Disable GPU in speech settings and restart transcription |
+| No Russian text | Load an existing Russian SRT; automatic translation is not implemented |
+
+## Source layout and further reading
+
+- `src/playercontroller.*`: playback coordination, subtitle tracks and error handling.
+- `src/transcription.*`: background Whisper, look-ahead limits, cancellation and stale-result filtering.
+- `src/audioextractor.*`: PCM extraction via FFmpeg without a shell or temporary WAV files.
+- `src/subtitles.*`: SRT parsing/export and subtitle timeline lookup.
+- `src/subtitlemodel.*`: transcript list model.
+- `qml/`: user interface and video output.
+- `tests/`: automated checks and SRT fixtures.
+
+[Implementation plan](PLAN.md), [program logic and editable Excalidraw diagrams](docs/PROGRAM_LOGIC.md), [LLPlayer review](docs/LLPLAYER_REVIEW.md) and [QA notes](docs/QA.md) are currently in Russian. The next development stage is local EN→RU translation and improved speech segmentation.
