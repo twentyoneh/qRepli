@@ -7,6 +7,16 @@ A desktop video player built with **C++20, Qt Quick and Qt Multimedia**, with lo
 
 **Current status:** local video playback, English transcription and two SRT tracks. **Local English-to-Russian translation is available through Ollama**. Russian cues are displayed with their original timestamps; existing SRT files can also be loaded.
 
+## Screenshots
+
+**Playback with two subtitle tracks**
+
+![qRepli playing a test video with English and Russian subtitles and an overlay seek bar](docs/screenshots/playback.webp)
+
+**Transcript panel**
+
+![qRepli with the transcript panel open and the current line highlighted](docs/screenshots/transcript.webp)
+
 ## Features
 
 - Open local videos using a file dialog, drag and drop, or the command line.
