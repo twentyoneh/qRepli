@@ -72,7 +72,7 @@ ApplicationWindow {
     }
     Dialog {
         id: asrSettings
-        title: "Распознавание речи"
+        title: "Распознавание и перевод"
         modal: true
         parent: Overlay.overlay
         anchors.centerIn: parent
@@ -112,6 +112,27 @@ ApplicationWindow {
                 text: "Использовать GPU, если доступен"
                 checked: controller.useGpu
                 onToggled: controller.useGpu = checked
+            }
+            CheckBox {
+                text: "Переводить на русский во время просмотра"
+                checked: controller.translateToRussian
+                onToggled: controller.translateToRussian = checked
+            }
+            TextField {
+                Layout.fillWidth: true
+                visible: controller.translateToRussian
+                text: controller.translationModel
+                placeholderText: "Модель Ollama, например qwen2.5:3b"
+                Accessible.name: "Локальная модель перевода Ollama"
+                onEditingFinished: controller.translationModel = text
+            }
+            Label {
+                Layout.fillWidth: true
+                visible: controller.translateToRussian
+                text: "Перевод работает локально через Ollama. Перед первым запуском: ollama pull " + controller.translationModel + ". Затем запустите Ollama."
+                wrapMode: Text.Wrap
+                font.pixelSize: 12
+                color: "#b5c1d3"
             }
             Label {
                 Layout.fillWidth: true
@@ -177,13 +198,13 @@ ApplicationWindow {
                 BusyIndicator { running: controller.asrRunning; visible: running; Layout.preferredWidth: 26; Layout.preferredHeight: 26 }
                 Label {
                     Layout.fillWidth: true
-                    text: controller.asrStatus || "Английская речь → субтитры"
+                    text: controller.asrStatus || (controller.translateToRussian ? "Английская речь → русские субтитры" : "Английская речь → субтитры")
                     color: "#b3c6ce"
                     elide: Text.ElideRight
                 }
                 ActionButton { text: "Настройки речи"; onClicked: asrSettings.open() }
                 ActionButton {
-                    text: controller.asrRunning ? "Остановить" : "Распознать речь"
+                    text: controller.asrRunning ? "Остановить" : (controller.translateToRussian ? "Распознать и перевести" : "Распознать речь")
                     accent: !controller.asrRunning
                     enabled: controller.hasMedia
                     onClicked: {

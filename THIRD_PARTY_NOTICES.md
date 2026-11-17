@@ -6,3 +6,6 @@
 - **FFmpeg** — separately installed executable, invoked locally through QProcess for decoding audio. No FFmpeg executable is copied into this repository. See [FFmpeg licensing](https://ffmpeg.org/legal.html) for the selected binary distribution.
 
 The current `.app` is a developer build. A redistributable package must include the notices and license texts for its exact dependencies.
+
+- **Ollama** — separately installed local inference server, accessed over loopback HTTP. See the [upstream license](https://github.com/ollama/ollama/blob/main/LICENSE). Its executable and models are not bundled by CMake.
+- **Qwen2.5 3B Instruct (qwen2.5:3b)** — optional translation model downloaded through Ollama (approximately 1.9 GB). This 3B model uses the Qwen Research License, not the Apache license used by several other Qwen2.5 sizes. See the [model card and license](https://ollama.com/library/qwen2.5:3b).
