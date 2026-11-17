@@ -1,5 +1,6 @@
 #include "transcription.h"
 #include "audioextractor.h"
+#include "translation.h"
 
 #include <QFile>
 #include <QElapsedTimer>
@@ -203,11 +204,26 @@ void TranscriptionService::run(const TranscriptionRequest &request,
                     cues.append({start, finish, text});
             }
         }
-        QMetaObject::invokeMethod(this, [this, generation, cues, end] {
-            if (generation == m_generation) emit chunkReady(cues, end);
+        QVector<SubtitleCue> translated;
+        if (request.translateToRussian && !cues.isEmpty()) {
+            postStatus(generation, QStringLiteral("Перевод EN → RU · %1").arg(formatMediaTime(offset)));
+            auto result = translateCues(cues, request.translationModel, control->cancelled);
+            if (control->cancelled.load()) return;
+            if (!result.error.isEmpty()) {
+                postError(generation, result.error);
+                return;
+            }
+            translated = std::move(result.cues);
+        }
+        QMetaObject::invokeMethod(this, [this, generation, cues, translated, end] {
+            if (generation != m_generation) return;
+            // Publish translation before advancing the playable interval.
+            if (!translated.isEmpty()) emit translatedChunkReady(translated);
+            emit chunkReady(cues, end);
         }, Qt::QueuedConnection);
         offset = end;
     }
-    if (!control->cancelled.load()) postStatus(generation, QStringLiteral("Распознавание завершено"));
+    if (!control->cancelled.load()) postStatus(generation, request.translateToRussian
+        ? QStringLiteral("Распознавание и перевод завершены") : QStringLiteral("Распознавание завершено"));
 #endif
 }

@@ -4,7 +4,7 @@ project(qRepli VERSION 0.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2 Multimedia)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2 Multimedia Network)
 qt_standard_project_setup(REQUIRES 6.8)
 
 option(QREPLI_WHISPER "Build local speech recognition" ON)
@@ -31,9 +31,10 @@ qt_add_library(qrepli_core STATIC
     src/playercontroller.cpp src/playercontroller.h
     src/transcription.cpp src/transcription.h
     src/audioextractor.cpp src/audioextractor.h
+    src/translation.cpp src/translation.h
 )
 target_include_directories(qrepli_core PUBLIC src)
-target_link_libraries(qrepli_core PUBLIC Qt6::Gui Qt6::Multimedia)
+target_link_libraries(qrepli_core PUBLIC Qt6::Gui Qt6::Multimedia Qt6::Network)
 if(QREPLI_WHISPER)
     target_link_libraries(qrepli_core PRIVATE whisper)
     target_compile_definitions(qrepli_core PRIVATE QREPLI_HAS_WHISPER=1)
@@ -74,6 +75,10 @@ if(BUILD_TESTING)
     set_tests_properties(subtitles PROPERTIES TIMEOUT 45)
     set_tests_properties(player PROPERTIES TIMEOUT 150)
     set_tests_properties(transcription PROPERTIES TIMEOUT 150)
+    qt_add_executable(test_translation tests/test_translation.cpp)
+    target_link_libraries(test_translation PRIVATE qrepli_core Qt6::Test)
+    add_test(NAME translation COMMAND test_translation)
+    set_tests_properties(translation PROPERTIES TIMEOUT 150)
 endif()
 
 include(GNUInstallDirs)

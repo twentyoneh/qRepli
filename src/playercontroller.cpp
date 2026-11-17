@@ -17,6 +17,8 @@ PlayerController::PlayerController(QObject *parent) : QObject(parent)
     m_player.setAudioOutput(&m_audio);
     m_audio.setVolume(float(std::clamp(QSettings().value("volume", 0.7).toDouble(), 0.0, 1.0)));
     m_modelPath = QSettings().value("asr/model").toString();
+    m_translateToRussian = QSettings().value("translation/enabled", true).toBool();
+    m_translationModel = QSettings().value("translation/model", "qwen2.5:3b").toString();
     m_useGpu = QSettings().value("asr/useGpu", true).toBool();
     m_ffmpegPath = QSettings().value("asr/ffmpeg").toString();
     if (m_ffmpegPath.isEmpty()) {
@@ -39,6 +41,8 @@ PlayerController::PlayerController(QObject *parent) : QObject(parent)
         emit asrChanged();
         emit stateChanged();
     });
+    connect(&m_asr, &TranscriptionService::translatedChunkReady, this,
+            [this](const QVector<SubtitleCue> &cues) { m_translated.append(cues); });
     connect(&m_asr, &TranscriptionService::chunkReady, this,
             [this](const QVector<SubtitleCue> &cues, qint64 until) {
                 m_original.append(cues);
@@ -148,6 +152,8 @@ bool PlayerController::openSubtitles(const QUrl &url, bool translation)
         return false;
     }
     if (translation) {
+        if (m_generatedTranslation && m_generated) stopTranscription();
+        m_generatedTranslation = false;
         m_translated = std::move(track);
         m_translatedFile = QFileInfo(url.toLocalFile()).fileName();
     } else {
@@ -167,6 +173,7 @@ void PlayerController::clearSubtitles()
     stopTranscription();
     m_original = {};
     m_translated = {};
+    m_generatedTranslation = false;
     m_originalFile.clear();
     m_translatedFile.clear();
     m_transcript.setTrack({});
@@ -204,6 +211,7 @@ void PlayerController::seek(qint64 value)
     const qint64 target = std::clamp(value, qint64(0), duration());
     if (m_generated && (target < m_processedStart || target >= m_processedUntil)) {
         m_asr.cancel();
+        if (m_generatedTranslation) m_translated = {};
         m_original = {};
         m_transcript.setTrack({});
         m_processedStart = target;
@@ -295,6 +303,25 @@ void PlayerController::setUseGpu(bool value)
     emit asrSettingsChanged();
 }
 
+void PlayerController::setTranslateToRussian(bool enabled)
+{
+    if (m_translateToRussian == enabled) return;
+    stopTranscription();
+    m_translateToRussian = enabled;
+    QSettings().setValue("translation/enabled", enabled);
+    emit asrSettingsChanged();
+}
+
+void PlayerController::setTranslationModel(const QString &model)
+{
+    const QString value = model.trimmed();
+    if (value.isEmpty() || value == m_translationModel) return;
+    stopTranscription();
+    m_translationModel = value;
+    QSettings().setValue("translation/model", value);
+    emit asrSettingsChanged();
+}
+
 void PlayerController::startTranscription()
 {
     if (!asrAvailable()) {
@@ -322,6 +349,11 @@ void PlayerController::startTranscription()
 void PlayerController::restartTranscription()
 {
     if (!m_generated) return;
+    if (m_translateToRussian || m_generatedTranslation) {
+        m_translated = {};
+        m_translatedFile = m_translateToRussian ? QStringLiteral("Автоперевод · RU") : QString();
+    }
+    m_generatedTranslation = m_translateToRussian;
     m_original = {};
     m_originalFile = QStringLiteral("Распознанная речь · EN");
     m_transcript.setTrack({});
@@ -332,7 +364,7 @@ void PlayerController::restartTranscription()
     m_processedUntil = start;
     m_asr.start({m_source.toLocalFile(), m_modelPath,
                  QStandardPaths::findExecutable(m_ffmpegPath), audioTrack(),
-                 start, duration(), m_useGpu});
+                 start, duration(), m_useGpu, m_translateToRussian, m_translationModel});
     m_asr.setPosition(position());
     updateSubtitles();
     updatePlayback();

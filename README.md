@@ -4,9 +4,8 @@
 
 A desktop video player built with **C++20, Qt Quick and Qt Multimedia**, with local English speech recognition powered by **whisper.cpp**.
 
-> The project is being renamed to **qRepli**. The commands below use the existing CMake target and executable name, `TransPlayer`. They describe the build configuration reviewed for this documentation; update those names once the rename is complete.
 
-**Current status:** local video playback, English transcription and two SRT tracks. Automatic English-to-Russian translation is **not implemented yet**; translated subtitles can be loaded from an existing SRT file.
+**Current status:** local video playback, English transcription and two SRT tracks. **Local English-to-Russian translation is available through Ollama**. Russian cues are displayed with their original timestamps; existing SRT files can also be loaded.
 
 ## Features
 
@@ -29,7 +28,7 @@ Runtime processing does not upload video, audio or text. Subtitles remain in mem
 | --- | --- |
 | Compiler | C++20 support and a C compiler for native dependencies |
 | CMake | 3.25+ for the supplied presets; 3.24+ for manual configuration |
-| Qt | 6.8+ with Quick, QuickControls2 and Multimedia; Test when tests are enabled |
+| Qt | 6.8+ with Quick, QuickControls2, Multimedia and Network; Test when tests are enabled |
 | Build tool | Make, Ninja or a suitable platform generator |
 | FFmpeg | A separate executable for speech recognition |
 | Whisper model | Local `ggml-base.en.bin`, approximately 148 MB |
@@ -90,28 +89,28 @@ cmake --build build-manual --config RelWithDebInfo --parallel
 ctest --test-dir build-manual -C RelWithDebInfo --output-on-failure
 ```
 
-Add `-DCMAKE_PREFIX_PATH=/path/to/Qt/kit` if needed. Configure with `-DTRANSPLAYER_WHISPER=OFF` for playback and SRT support without ASR, or `-DBUILD_TESTING=OFF` to omit tests. An ASR-disabled build does not need the ASR model or external FFmpeg executable; Qt's media backend still has its own dependencies.
+Add `-DCMAKE_PREFIX_PATH=/path/to/Qt/kit` if needed. Configure with `-DQREPLI_WHISPER=OFF` for playback and SRT support without ASR, or `-DBUILD_TESTING=OFF` to omit tests. An ASR-disabled build does not need the ASR model or external FFmpeg executable; Qt's media backend still has its own dependencies.
 
-In Qt Creator, open `CMakeLists.txt`, select a Qt 6.8+ desktop kit and run the `TransPlayer` target.
+In Qt Creator, open `CMakeLists.txt`, select a Qt 6.8+ desktop kit and run the `qRepli` target.
 
 ## Run
 
 On macOS:
 
 ```sh
-open build/TransPlayer.app
+open build/qRepli.app
 ```
 
 Open a video with original and translated subtitles:
 
 ```sh
-./build/TransPlayer.app/Contents/MacOS/TransPlayer \
+./build/qRepli.app/Contents/MacOS/qRepli \
   /absolute/path/video.mp4 \
   --subtitles /absolute/path/video.en.srt \
   --translation /absolute/path/video.ru.srt
 ```
 
-On Linux, the usual single-configuration executable is `build/TransPlayer`. On Windows, the path depends on the generator, for example `build/RelWithDebInfo/TransPlayer.exe`. Multi-configuration generators may also add a configuration directory on other platforms.
+On Linux, the usual single-configuration executable is `build/qRepli`. On Windows, the path depends on the generator, for example `build/RelWithDebInfo/qRepli.exe`. Multi-configuration generators may also add a configuration directory on other platforms.
 
 | Argument | Purpose |
 | --- | --- |
@@ -143,18 +142,41 @@ The model is saved to `models/ggml-base.en.bin`; the directory is excluded from 
 Or start from the command line:
 
 ```sh
-./build/TransPlayer.app/Contents/MacOS/TransPlayer /absolute/path/video.mp4 \
+./build/qRepli.app/Contents/MacOS/qRepli /absolute/path/video.mp4 \
   --model models/ggml-base.en.bin --transcribe
 ```
 
 ### Current limitations
 
-- English transcription only; automatic EN→RU translation is pending.
+- English speech recognition and Russian translation. A local Ollama server and a downloaded translation model are required for automatic translation.
 - Audio is extracted in windows of up to 20 seconds as mono 16 kHz float PCM. The next window starts only when its beginning is at most 30 seconds ahead of playback, allowing approximately 50 seconds of prepared audio coverage.
 - Basic silence and no-speech filtering is implemented. Full VAD, overlapping windows and cross-window phrase repair are not implemented; music and noise can produce incorrect text.
 - Seeking outside the prepared interval clears the generated track and restarts near the new position. There is no persistent transcript cache. Export includes only text already prepared.
 - Whisper timestamps may be inaccurate. Unusual containers, shifted audio and track matching between Qt and FFmpeg need broader validation.
 - Initial Metal shader preparation can take longer. Performance has been checked on short synthetic samples, not full-length movies.
+
+## Automatic Russian subtitles
+
+Install [Ollama](https://ollama.com/download), then start its local server. On macOS with Homebrew:
+
+```sh
+brew install ollama
+OLLAMA_NO_CLOUD=1 ollama serve
+```
+
+In a second terminal, download the default model once (about 1.9 GB):
+
+```sh
+ollama pull qwen2.5:3b
+```
+
+Keep Ollama running. Open speech settings in qRepli, enable **“Переводить на русский во время просмотра”** (enabled by default), and click **“Распознать и перевести”**. The translation model name can be changed in those settings. The application contacts only `127.0.0.1:11434`, with proxies and redirects disabled. Use a local model and run Ollama with `OLLAMA_NO_CLOUD=1` to disable its cloud functionality.
+
+Each audio window is recognized and translated before playback is released. If processing falls behind, the video pauses until Russian subtitles are ready. Manual pause remains respected. Seeking outside the prepared range cancels old work and clears generated English and Russian tracks. Loading a translated SRT during automatic translation stops the active pipeline, preventing generated results from overwriting it.
+
+This is incremental processing of local files, not zero-latency live streaming: windows are up to 20 seconds and model speed determines preparation time. Translation errors are shown explicitly and pause playback; disable automatic translation and restart recognition to continue with English only. Export currently saves the original track.
+
+Details and validation: [local translation](docs/TRANSLATION.md).
 
 ## Controls
 
@@ -178,15 +200,15 @@ No ready-made installers or automated standalone packaging are provided. The fol
 cmake --install build --config RelWithDebInfo --prefix dist
 ```
 
-This installs `dist/TransPlayer.app` on macOS, `dist/bin/TransPlayer.exe` on Windows, or `dist/bin/TransPlayer` on Linux. The current install target installs the application but does **not** automatically collect Qt dependencies, the external FFmpeg executable or the model.
+This installs `dist/qRepli.app` on macOS, `dist/bin/qRepli.exe` on Windows, or `dist/bin/qRepli` on Linux. The current install target installs the application but does **not** automatically collect Qt dependencies, the external FFmpeg executable or the model.
 
 ### macOS
 
 After installation, run your Qt kit's deployment tool:
 
 ```sh
-/path/to/Qt/kit/bin/macdeployqt dist/TransPlayer.app -qmldir=qml
-open dist/TransPlayer.app
+/path/to/Qt/kit/bin/macdeployqt dist/qRepli.app -qmldir=qml
+open dist/qRepli.app
 ```
 
 The tool collects Qt libraries, plugins and QML dependencies. Validate the resulting bundle without the development SDK. Signing and notarization are not configured in this project. [Qt macOS deployment](https://doc.qt.io/qt-6/macos-deployment.html).
@@ -196,14 +218,14 @@ The tool collects Qt libraries, plugins and QML dependencies. Validate the resul
 In PowerShell with the Qt/MSVC environment configured:
 
 ```powershell
-& "C:/Qt/6.x/msvc2022_64/bin/windeployqt.exe" --release --qmldir qml dist/bin/TransPlayer.exe
+& "C:/Qt/6.x/msvc2022_64/bin/windeployqt.exe" --release --qmldir qml dist/bin/qRepli.exe
 ```
 
 Replace the kit path. Distribute the entire prepared directory, not just the EXE. MSVC distributions should include installation of the official Visual C++ Redistributable. [Qt Windows deployment](https://doc.qt.io/qt-6/windows-deployment.html).
 
 ### Linux
 
-For a local installation, provide compatible Qt libraries, QML modules and platform/multimedia plugins on the target system, then run `dist/bin/TransPlayer`. A single executable is not a portable package. Standalone distribution needs separate packaging and library/plugin search-path configuration. AppImage, DEB and RPM configurations are not included. [Qt Linux deployment](https://doc.qt.io/qt-6/linux-deployment.html).
+For a local installation, provide compatible Qt libraries, QML modules and platform/multimedia plugins on the target system, then run `dist/bin/qRepli`. A single executable is not a portable package. Standalone distribution needs separate packaging and library/plugin search-path configuration. AppImage, DEB and RPM configurations are not included. [Qt Linux deployment](https://doc.qt.io/qt-6/linux-deployment.html).
 
 ### Model and FFmpeg on the target machine
 
@@ -221,12 +243,12 @@ Supported media formats depend on Qt's media backend and codecs. The development
 The standard CTest suites cover subtitles, the player and transcription infrastructure. Real-model tests are separate so regular tests do not require a 148 MB model. Prepare a short English clip containing the word “video” at the path used below:
 
 ```sh
-TRANSPLAYER_TEST_MODEL="$PWD/models/ggml-base.en.bin" \
-TRANSPLAYER_TEST_AUDIO="$PWD/build/speech-demo.mp4" \
+QREPLI_TEST_MODEL="$PWD/models/ggml-base.en.bin" \
+QREPLI_TEST_AUDIO="$PWD/build/speech-demo.mp4" \
 ./build/test_transcription realModelSmokeTest
 
-TRANSPLAYER_TEST_MODEL="$PWD/models/ggml-base.en.bin" \
-TRANSPLAYER_TEST_AUDIO="$PWD/build/speech-demo.mp4" \
+QREPLI_TEST_MODEL="$PWD/models/ggml-base.en.bin" \
+QREPLI_TEST_AUDIO="$PWD/build/speech-demo.mp4" \
 ./build/test_player realTranscriptionAndSourceChange
 ```
 
@@ -241,7 +263,7 @@ ffmpeg -hide_banner -loglevel error -y \
   -t 30 -c:v libx264 -preset ultrafast -crf 28 \
   -c:a aac -af 'volume=0.03' -movflags +faststart build/demo.mp4
 
-./build/TransPlayer.app/Contents/MacOS/TransPlayer build/demo.mp4 \
+./build/qRepli.app/Contents/MacOS/qRepli build/demo.mp4 \
   --subtitles tests/fixtures/demo.en.srt \
   --translation tests/fixtures/demo.ru.srt
 ```
@@ -258,7 +280,7 @@ This checks manually prepared subtitle timing and playback, not speech recogniti
 | Model does not load | Select `ggml-base.en.bin`; re-run the download script to verify SHA-256 |
 | Playback fails after deployment | Qt plugins, media backend and available codecs |
 | GPU problems | Disable GPU in speech settings and restart transcription |
-| No Russian text | Load an existing Russian SRT; automatic translation is not implemented |
+| No Russian text | Enable Russian translation in speech settings, start Ollama and download the selected model; then restart recognition |
 
 ## Source layout and further reading
 
@@ -270,4 +292,4 @@ This checks manually prepared subtitle timing and playback, not speech recogniti
 - `qml/`: user interface and video output.
 - `tests/`: automated checks and SRT fixtures.
 
-[Implementation plan](PLAN.md), [program logic and editable Excalidraw diagrams](docs/PROGRAM_LOGIC.md), [LLPlayer review](docs/LLPLAYER_REVIEW.md) and [QA notes](docs/QA.md) are currently in Russian. The next development stage is local EN→RU translation and improved speech segmentation.
+[Implementation plan](PLAN.md), [program logic and editable Excalidraw diagrams](docs/PROGRAM_LOGIC.md), [LLPlayer review](docs/LLPLAYER_REVIEW.md) and [QA notes](docs/QA.md) are currently in Russian. The next development stage is improved speech segmentation and translation quality. Older architecture diagrams describe the previous implementation; see [the current translation pipeline](docs/TRANSLATION.md).

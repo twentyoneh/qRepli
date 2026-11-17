@@ -1,7 +1,28 @@
+# Build and installation output
 /build*/
+/cmake-build*/
 /out/
+/dist/
+
+# Generated CMake files and local presets
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/CTestTestfile.cmake
+/Testing/
+/Makefile
+/compile_commands.json
+CMakeUserPresets.json
+
+# Qt Creator settings and caches
+/.qtcreator/
 /.qt/
 /.cache/
 *.user
+*.user.*
+
+# macOS metadata
 .DS_Store
+
+# Downloaded speech recognition models
 /models/

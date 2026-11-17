@@ -35,6 +35,8 @@ class PlayerController : public QObject
     Q_PROPERTY(QString asrStatus READ asrStatus NOTIFY asrChanged)
     Q_PROPERTY(QString modelPath READ modelPath NOTIFY asrSettingsChanged)
     Q_PROPERTY(QString ffmpegPath READ ffmpegPath WRITE setFfmpegPath NOTIFY asrSettingsChanged)
+    Q_PROPERTY(bool translateToRussian READ translateToRussian WRITE setTranslateToRussian NOTIFY asrSettingsChanged)
+    Q_PROPERTY(QString translationModel READ translationModel WRITE setTranslationModel NOTIFY asrSettingsChanged)
     Q_PROPERTY(bool useGpu READ useGpu WRITE setUseGpu NOTIFY asrSettingsChanged)
 
 public:
@@ -68,6 +70,10 @@ public:
     bool useGpu() const { return m_useGpu; }
     void setFfmpegPath(const QString &path);
     void setUseGpu(bool value);
+    bool translateToRussian() const { return m_translateToRussian; }
+    QString translationModel() const { return m_translationModel; }
+    void setTranslateToRussian(bool enabled);
+    void setTranslationModel(const QString &model);
 
     Q_INVOKABLE bool openMedia(const QUrl &url);
     Q_INVOKABLE bool openSubtitles(const QUrl &url, bool translation = false);
@@ -119,6 +125,9 @@ private:
     QString m_modelPath;
     QString m_ffmpegPath;
     bool m_useGpu = true;
+    bool m_translateToRussian = true;
+    bool m_generatedTranslation = false;
+    QString m_translationModel;
     bool m_generated = false;
     bool m_playRequested = false;
     qint64 m_processedStart = 0;

@@ -105,6 +105,41 @@ private slots:
         QVERIFY(player.translatedFile().isEmpty());
     }
 
+    void realTranslatedPlayback()
+    {
+        const QString model = qEnvironmentVariable("QREPLI_TEST_MODEL");
+        const QString media = qEnvironmentVariable("QREPLI_TEST_AUDIO");
+        if (!qEnvironmentVariableIsSet("QREPLI_TEST_TRANSLATION") || model.isEmpty() || media.isEmpty())
+            QSKIP("Set model, audio and QREPLI_TEST_TRANSLATION for full EN-RU integration");
+        PlayerController player;
+        player.setVolume(0);
+        player.setTranslateToRussian(true);
+        player.setTranslationModel("qwen2.5:3b");
+        player.setWhisperModel(QUrl::fromLocalFile(model));
+        QVERIFY(player.openMedia(QUrl::fromLocalFile(media)));
+        QTRY_VERIFY(player.seekable() && player.duration() > 0);
+        player.startTranscription();
+        QVERIFY(!player.playing());
+        player.togglePlayback();
+        QVERIFY(!player.playRequested());
+        QTRY_VERIFY_WITH_TIMEOUT(!player.asrRunning(), 120000);
+        QVERIFY2(player.error().isEmpty(), qPrintable(player.error()));
+        QVERIFY(!player.playing());
+        QCOMPARE(player.translatedFile(), QString("Автоперевод · RU"));
+        player.seek(2000);
+        QVERIFY(!player.originalText().isEmpty());
+        QVERIFY(player.translatedText().contains(QRegularExpression("[А-Яа-яЁё]")));
+        qInfo().noquote() << "RU subtitles:" << player.translatedText();
+        player.togglePlayback();
+        QTRY_VERIFY(player.playing());
+        // Start again, then change source before results can arrive.
+        player.startTranscription();
+        QVERIFY(player.openMedia(m_video));
+        QCoreApplication::processEvents();
+        QVERIFY(player.translatedText().isEmpty());
+        QVERIFY(player.translatedFile().isEmpty());
+    }
+
     void realTranscriptionAndSourceChange()
     {
         const QString model = qEnvironmentVariable("QREPLI_TEST_MODEL");
@@ -113,6 +148,7 @@ private slots:
             QSKIP("Set QREPLI_TEST_MODEL and QREPLI_TEST_AUDIO for ASR integration");
         PlayerController player;
         player.setVolume(0);
+        player.setTranslateToRussian(false);
         player.setWhisperModel(QUrl::fromLocalFile(model));
         QVERIFY(player.openMedia(QUrl::fromLocalFile(media)));
         QTRY_VERIFY(player.seekable() && player.duration() > 0);

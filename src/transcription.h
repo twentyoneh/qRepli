@@ -16,6 +16,8 @@ struct TranscriptionRequest
     qint64 startMs = 0;
     qint64 durationMs = 0;
     bool useGpu = true;
+    bool translateToRussian = false;
+    QString translationModel = QStringLiteral("qwen2.5:3b");
 };
 
 class TranscriptionService : public QObject
@@ -34,6 +36,7 @@ public:
 
 signals:
     void stateChanged();
+    void translatedChunkReady(const QVector<SubtitleCue> &cues);
     void chunkReady(const QVector<SubtitleCue> &cues, qint64 processedUntilMs);
     void failed(const QString &message);
 
