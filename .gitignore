@@ -1,0 +1,7 @@
+/build*/
+/out/
+/.qt/
+/.cache/
+*.user
+.DS_Store
+/models/

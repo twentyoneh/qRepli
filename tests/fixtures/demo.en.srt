@@ -1,0 +1,19 @@
+1
+00:00:01,000 --> 00:00:05,000
+Welcome to qRepli.
+
+2
+00:00:05,500 --> 00:00:10,000
+Watch the video with two subtitle tracks.
+
+3
+00:00:10,500 --> 00:00:15,000
+Click a line to jump to that moment.
+
+4
+00:00:16,000 --> 00:00:22,000
+Your video and subtitles stay on this computer.
+
+5
+00:00:23,000 --> 00:00:29,000
+Press Space to pause. Use the arrows to seek.

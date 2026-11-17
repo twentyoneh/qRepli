@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1370" viewBox="0 0 1400 1370">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#334155" stroke-width="1.5"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="40" y="60.0" font-family="Helvetica,Arial,sans-serif" font-size="32" fill="#0f172a" text-anchor="start">01 · Как видео превращается в субтитры</text>
+<text x="40" y="97.0" font-family="Helvetica,Arial,sans-serif" font-size="19" fill="#475569" text-anchor="start">Текущая реализация · локальный файл читается независимо для просмотра и распознавания</text>
+<rect x="480" y="140" width="440" height="90" rx="14" fill="#f1f5f9" stroke="#334155" stroke-width="2"/>
+<text x="700.0" y="192.875" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">Локальный видеофайл</text>
+<rect x="100" y="330" width="400" height="100" rx="14" fill="#dbeafe" stroke="#334155" stroke-width="2"/>
+<text x="300.0" y="374.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">QMediaPlayer</text>
+<text x="300.0" y="401.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">Декодирует видео и звук</text>
+<rect x="900" y="330" width="400" height="100" rx="14" fill="#ffedd5" stroke="#334155" stroke-width="2"/>
+<text x="1100.0" y="374.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">FFmpeg · отдельный процесс</text>
+<text x="1100.0" y="401.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">Читает выбранную аудиодорожку</text>
+<rect x="100" y="520" width="400" height="100" rx="14" fill="#dbeafe" stroke="#334155" stroke-width="2"/>
+<text x="300.0" y="564.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">VideoOutput + QAudioOutput</text>
+<text x="300.0" y="591.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">Картинка и звук для зрителя</text>
+<rect x="900" y="520" width="400" height="100" rx="14" fill="#ffedd5" stroke="#334155" stroke-width="2"/>
+<text x="1100.0" y="564.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">whisper.cpp · рабочий QThread</text>
+<text x="1100.0" y="591.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">PCM → английский текст</text>
+<rect x="900" y="710" width="400" height="100" rx="14" fill="#dcfce7" stroke="#334155" stroke-width="2"/>
+<text x="1100.0" y="754.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">chunkReady(cues, end)</text>
+<text x="1100.0" y="781.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">Текст и времена реплик</text>
+<rect x="480" y="900" width="440" height="115" rx="14" fill="#dbeafe" stroke="#334155" stroke-width="2"/>
+<text x="700.0" y="939.125" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">PlayerController · GUI-поток</text>
+<text x="700.0" y="965.375" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">Хранит дорожки, управляет паузой</text>
+<text x="700.0" y="991.625" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">Выбирает текст по времени видео</text>
+<rect x="100" y="1120" width="400" height="100" rx="14" fill="#dcfce7" stroke="#334155" stroke-width="2"/>
+<text x="300.0" y="1164.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">Субтитры поверх видео</text>
+<text x="300.0" y="1191.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">Оригинал + загруженный перевод</text>
+<rect x="900" y="1120" width="400" height="100" rx="14" fill="#dcfce7" stroke="#334155" stroke-width="2"/>
+<text x="1100.0" y="1164.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">SubtitleModel → список реплик</text>
+<text x="1100.0" y="1191.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">Клик: перемотка; экспорт: SRT</text>
+<polyline points="700.0,238 700.0,275 300.0,275 300.0,322" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<polyline points="700.0,238 700.0,275 1100.0,275 1100.0,322" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<polyline points="300.0,438 300.0,512" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<polyline points="1100.0,438 1100.0,512" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1130" y="470.0" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">PCM · mono</text>
+<text x="1130" y="492.5" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">16 kHz · float32</text>
+<polyline points="1100.0,628 1100.0,702" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<polyline points="1100.0,818 1100.0,860 700.0,860 700.0,892" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="850" y="841.0" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">Через очередь Qt</text>
+<polyline points="508,380.0 630,380.0 630,875.0 700,875.0 700.0,892.0" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="650" y="563.0" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">positionChanged</text>
+<text x="650" y="585.5" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">Текущее время</text>
+<polyline points="700.0,1023 700.0,1060 300.0,1060 300.0,1112" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<polyline points="700.0,1023 700.0,1060 1100.0,1060 1100.0,1112" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="45" y="1280.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start">Синий — управление и показ · Оранжевый — обработка аудио · Зелёный — текст</text>
+<text x="45" y="1305.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start">Whisper читает локальную модель. Автоматического EN → RU перевода пока нет.</text>
+</svg>

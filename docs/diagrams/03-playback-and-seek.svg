@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1840" height="1450" viewBox="0 0 1840 1450">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#334155" stroke-width="1.5"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<text x="40" y="60.0" font-family="Helvetica,Arial,sans-serif" font-size="32" fill="#0f172a" text-anchor="start">03 · Пауза, ожидание субтитров и перемотка</text>
+<text x="40" y="97.0" font-family="Helvetica,Arial,sans-serif" font-size="19" fill="#475569" text-anchor="start">playRequested — желание пользователя смотреть · playing — фактическое состояние QMediaPlayer</text>
+<text x="50" y="171.0" font-family="Helvetica,Arial,sans-serif" font-size="26" fill="#0f172a" text-anchor="start">A. Решение о воспроизведении</text>
+<text x="990" y="171.0" font-family="Helvetica,Arial,sans-serif" font-size="26" fill="#0f172a" text-anchor="start">B. Перемотка при включённом ASR</text>
+<polygon points="250.0,245 450,340.0 250.0,435 50,340.0" fill="#ede9fe" stroke="#334155" stroke-width="2"/>
+<text x="250.0" y="334.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">playRequested</text>
+<text x="250.0" y="361.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">равен true?</text>
+<rect x="530" y="290" width="320" height="100" rx="14" fill="#f1f5f9" stroke="#334155" stroke-width="2"/>
+<text x="690.0" y="335.5" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#0f172a" text-anchor="middle">Пауза пользователя</text>
+<text x="690.0" y="358.0" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#0f172a" text-anchor="middle">Не возобновлять автоматически</text>
+<polygon points="250.0,540 450,640.0 250.0,740 50,640.0" fill="#ede9fe" stroke="#334155" stroke-width="2"/>
+<text x="250.0" y="634.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">Нужен ещё</text>
+<text x="250.0" y="661.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">результат ASR?</text>
+<rect x="530" y="590" width="320" height="100" rx="14" fill="#ffedd5" stroke="#334155" stroke-width="2"/>
+<text x="690.0" y="635.25" font-family="Helvetica,Arial,sans-serif" font-size="19" fill="#0f172a" text-anchor="middle">Пауза ожидания</text>
+<text x="690.0" y="659.0" font-family="Helvetica,Arial,sans-serif" font-size="19" fill="#0f172a" text-anchor="middle">playRequested остаётся true</text>
+<rect x="50" y="860" width="400" height="100" rx="14" fill="#dcfce7" stroke="#334155" stroke-width="2"/>
+<text x="250.0" y="905.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">QMediaPlayer.play()</text>
+<text x="250.0" y="930.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">Если файл открыт и ещё не играет</text>
+<polyline points="458,340.0 522,340.0" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="470" y="321.0" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">Нет</text>
+<polyline points="250.0,443 250.0,532" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="270" y="493.0" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">Да</text>
+<polyline points="458,640.0 522,640.0" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="470" y="621.0" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">Да</text>
+<polyline points="250.0,748 250.0,852" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="270" y="808.0" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">Нет</text>
+<text x="50" y="1041.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="start">При включённом ASR ожидаем результат, если позиция</text>
+<text x="50" y="1067.25" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="start">вне [processedStart, processedUntil) и видео не кончилось.</text>
+<text x="50" y="1093.5" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="start"></text>
+<text x="50" y="1119.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="start">chunkReady обновляет диапазон и снова проверяет A.</text>
+<text x="50" y="1146.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="start">Ручная пауза сохраняется, даже когда текст уже готов.</text>
+<text x="50" y="1172.25" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="start"></text>
+<text x="50" y="1198.5" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="start">На паузе распознавание может заполнить запас,</text>
+<text x="50" y="1224.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="start">после чего ждёт продвижения позиции.</text>
+<rect x="990" y="235" width="400" height="100" rx="14" fill="#dbeafe" stroke="#334155" stroke-width="2"/>
+<text x="1190.0" y="280.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">seek(target)</text>
+<text x="1190.0" y="305.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">Ограничить target длительностью</text>
+<polygon points="1190.0,425 1390,525.0 1190.0,625 990,525.0" fill="#ede9fe" stroke="#334155" stroke-width="2"/>
+<text x="1190.0" y="519.75" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">target внутри</text>
+<text x="1190.0" y="546.0" font-family="Helvetica,Arial,sans-serif" font-size="21" fill="#0f172a" text-anchor="middle">готового диапазона?</text>
+<rect x="1480" y="475" width="310" height="100" rx="14" fill="#dcfce7" stroke="#334155" stroke-width="2"/>
+<text x="1635.0" y="520.25" font-family="Helvetica,Arial,sans-serif" font-size="19" fill="#0f172a" text-anchor="middle">Использовать готовые</text>
+<text x="1635.0" y="544.0" font-family="Helvetica,Arial,sans-serif" font-size="19" fill="#0f172a" text-anchor="middle">реплики, без перезапуска</text>
+<rect x="990" y="725" width="400" height="120" rx="14" fill="#ffedd5" stroke="#334155" stroke-width="2"/>
+<text x="1190.0" y="767.5" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">Отменить текущую задачу</text>
+<text x="1190.0" y="792.5" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">Очистить оригинал и список</text>
+<text x="1190.0" y="817.5" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">Запустить таймер 250 мс</text>
+<rect x="990" y="960" width="400" height="110" rx="14" fill="#dbeafe" stroke="#334155" stroke-width="2"/>
+<text x="1190.0" y="1010.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">Установить позицию видео</text>
+<text x="1190.0" y="1035.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">Обновить текст и решение A</text>
+<rect x="990" y="1190" width="400" height="125" rx="14" fill="#ffedd5" stroke="#334155" stroke-width="2"/>
+<text x="1190.0" y="1235.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">После таймера: новая задача</text>
+<text x="1190.0" y="1260.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">start = max(0, позиция − 1 с)</text>
+<text x="1190.0" y="1285.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="middle">Заново загрузить модель</text>
+<polyline points="1190.0,343 1190.0,417" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<polyline points="1398,525.0 1472,525.0" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1410" y="503.0" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">Да</text>
+<polyline points="1190.0,633 1190.0,717" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1210" y="686.0" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">Нет</text>
+<polyline points="1190.0,853 1190.0,952" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<polyline points="1635.0,583 1635.0,900 1190.0,900 1190.0,952" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<polyline points="1190.0,1078 1190.0,1182" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="8 6"/>
+<text x="1410" y="1268.0" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">Только если таймер</text>
+<text x="1410" y="1290.5" font-family="Helvetica,Arial,sans-serif" font-size="18" fill="#475569" text-anchor="start">был запущен</text>
+<text x="1480" y="960.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start">Каждая отмена меняет</text>
+<text x="1480" y="985.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start">номер поколения.</text>
+<text x="1480" y="1010.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start"></text>
+<text x="1480" y="1035.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start">GUI отбрасывает</text>
+<text x="1480" y="1060.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start">старые результаты.</text>
+<text x="1480" y="1085.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start"></text>
+<text x="1480" y="1110.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start">Новая задача ждёт</text>
+<text x="1480" y="1135.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start">завершения старого</text>
+<text x="1480" y="1160.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start">рабочего потока.</text>
+<text x="50" y="1355.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start">При смене файла: отмена ASR → остановка плеера → очистка обеих дорожек → открытие нового видео.</text>
+<text x="50" y="1380.0" font-family="Helvetica,Arial,sans-serif" font-size="20" fill="#0f172a" text-anchor="start">При ASR, выключенном пользователем, перемотка просто меняет позицию и отображаемый текст.</text>
+</svg>
