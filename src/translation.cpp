@@ -1,5 +1,6 @@
 #include "translation.h"
 
+#include <QCoreApplication>
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -19,7 +20,7 @@ static TranslationResult translateOne(const QVector<SubtitleCue> &cues, const QS
     // Keep even custom/test endpoints strictly on loopback. Never follow redirects.
     if (endpoint.scheme() != "http" || endpoint.host() != "127.0.0.1"
         || !endpoint.userInfo().isEmpty()) {
-        result.error = QStringLiteral("Переводчик должен работать локально на 127.0.0.1.");
+        result.error = QCoreApplication::translate("Translation", "Переводчик должен работать локально на 127.0.0.1.");
         return result;
     }
     QJsonArray texts;
@@ -64,13 +65,13 @@ static TranslationResult translateOne(const QVector<SubtitleCue> &cues, const QS
     deadline.start(timeoutMs);
     if (!reply->isFinished()) loop.exec();
     if (cancelled.load()) return result;
-    if (timedOut) result.error = QStringLiteral("Перевод не завершён за отведённое время. Проверьте Ollama или выберите меньшую модель.");
-    else if (oversized) result.error = QStringLiteral("Переводчик вернул слишком большой ответ.");
+    if (timedOut) result.error = QCoreApplication::translate("Translation", "Перевод не завершён за отведённое время. Проверьте Ollama или выберите меньшую модель.");
+    else if (oversized) result.error = QCoreApplication::translate("Translation", "Переводчик вернул слишком большой ответ.");
     else if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 404)
-        result.error = QStringLiteral("Модель перевода не найдена. Выполните: ollama pull %1").arg(model);
+        result.error = QCoreApplication::translate("Translation", "Модель перевода не найдена. Выполните: ollama pull %1").arg(model);
     else if (reply->error() != QNetworkReply::NoError
              || reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200)
-        result.error = QStringLiteral("Локальный переводчик недоступен. Запустите Ollama (ollama serve) и загрузите модель %1. %2")
+        result.error = QCoreApplication::translate("Translation", "Локальный переводчик недоступен. Запустите Ollama (ollama serve) и загрузите модель %1. %2")
                            .arg(model, reply->errorString());
     if (!result.error.isEmpty()) return result;
     QJsonParseError parseError;
@@ -78,14 +79,14 @@ static TranslationResult translateOne(const QVector<SubtitleCue> &cues, const QS
     if (parseError.error != QJsonParseError::NoError || !envelope.isObject()
         || !envelope.object().value("done").toBool()
         || envelope.object().value("done_reason").toString() == "length") {
-        result.error = QStringLiteral("Переводчик вернул неполный или некорректный ответ.");
+        result.error = QCoreApplication::translate("Translation", "Переводчик вернул неполный или некорректный ответ.");
         return result;
     }
     const auto document = QJsonDocument::fromJson(envelope.object().value("response").toString().toUtf8(), &parseError);
     const auto translations = document.object().value("translations");
     if (parseError.error != QJsonParseError::NoError || !translations.isArray()
         || translations.toArray().size() != cues.size()) {
-        result.error = QStringLiteral("Переводчик нарушил число реплик. Повторите распознавание или выберите другую модель.");
+        result.error = QCoreApplication::translate("Translation", "Переводчик нарушил число реплик. Повторите распознавание или выберите другую модель.");
         return result;
     }
     const auto array = translations.toArray();
@@ -93,7 +94,7 @@ static TranslationResult translateOne(const QVector<SubtitleCue> &cues, const QS
         const QString text = array[i].toString().trimmed();
         if (text.isEmpty()) {
             result.cues.clear();
-            result.error = QStringLiteral("Переводчик вернул пустую реплику.");
+            result.error = QCoreApplication::translate("Translation", "Переводчик вернул пустую реплику.");
             return result;
         }
         result.cues.append({cues[i].startMs, cues[i].endMs, text});

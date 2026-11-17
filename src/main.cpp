@@ -5,7 +5,48 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
+#include <QSettings>
 #include <QTimer>
+#include <QTranslator>
+
+class InterfaceLanguage : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
+
+public:
+    InterfaceLanguage()
+    {
+        if (QSettings().value("ui/language", "ru").toString() == "en")
+            setLanguage(QStringLiteral("en"));
+    }
+
+    QString language() const { return m_language; }
+
+    void setLanguage(const QString &language)
+    {
+        if (language == m_language || (language != "en" && language != "ru")) return;
+        if (language == "en") {
+            if (!m_english.load(QStringLiteral(":/i18n/qrepli_en.qm"))) {
+                qWarning("Could not load English interface translations");
+                return;
+            }
+            QCoreApplication::installTranslator(&m_english);
+        } else {
+            QCoreApplication::removeTranslator(&m_english);
+        }
+        m_language = language;
+        QSettings().setValue("ui/language", m_language);
+        emit languageChanged();
+    }
+
+signals:
+    void languageChanged();
+
+private:
+    QString m_language = QStringLiteral("ru");
+    QTranslator m_english;
+};
 
 int main(int argc, char *argv[])
 {
@@ -14,23 +55,26 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationName("qRepli");
     QCoreApplication::setApplicationVersion("0.1.0");
     QQuickStyle::setStyle("Basic");
+    InterfaceLanguage interfaceLanguage;
 
     QCommandLineParser arguments;
-    arguments.setApplicationDescription(QStringLiteral("Локальный видеоплеер с двумя дорожками SRT."));
+    arguments.setApplicationDescription(QCoreApplication::translate("CommandLine", "Локальный видеоплеер с двумя дорожками SRT."));
     arguments.addHelpOption();  //help
     arguments.addVersionOption();   //version
-    arguments.addPositionalArgument("video", QStringLiteral("Локальный видеофайл."), "[video]");
-    arguments.addOption({"subtitles", QStringLiteral("Оригинальные субтитры SRT."), "file"});
-    arguments.addOption({"translation", QStringLiteral("Переведённые субтитры SRT."), "file"});
-    arguments.addOption({"model", QStringLiteral("Локальный файл модели Whisper."), "file"});
-    arguments.addOption({"ffmpeg", QStringLiteral("Путь к исполняемому файлу FFmpeg."), "file"});
-    arguments.addOption({"transcribe", QStringLiteral("Распознать английскую речь после открытия видео.")});
+    arguments.addPositionalArgument("video", QCoreApplication::translate("CommandLine", "Локальный видеофайл."), "[video]");
+    arguments.addOption({"subtitles", QCoreApplication::translate("CommandLine", "Оригинальные субтитры SRT."), "file"});
+    arguments.addOption({"translation", QCoreApplication::translate("CommandLine", "Переведённые субтитры SRT."), "file"});
+    arguments.addOption({"model", QCoreApplication::translate("CommandLine", "Локальный файл модели Whisper."), "file"});
+    arguments.addOption({"ffmpeg", QCoreApplication::translate("CommandLine", "Путь к исполняемому файлу FFmpeg."), "file"});
+    arguments.addOption({"transcribe", QCoreApplication::translate("CommandLine", "Распознать английскую речь после открытия видео.")});
     arguments.process(app);
 
     qmlRegisterUncreatableType<PlayerController>("qRepli", 1, 0, "PlayerController",
                                                  "Created by the application");
     qmlRegisterUncreatableType<SubtitleModel>("qRepli", 1, 0, "SubtitleModel",
                                              "Owned by PlayerController");
+    qmlRegisterUncreatableType<InterfaceLanguage>("qRepli", 1, 0, "InterfaceLanguage",
+                                                 "Created by the application");
     PlayerController controller;
     if (arguments.isSet("model"))
         controller.setWhisperModel(QUrl::fromLocalFile(QFileInfo(arguments.value("model")).absoluteFilePath()));
@@ -43,7 +87,18 @@ int main(int argc, char *argv[])
         }
     });
     QQmlApplicationEngine engine;
-    engine.setInitialProperties({{"controller", QVariant::fromValue(&controller)}});
+    QObject::connect(&interfaceLanguage, &InterfaceLanguage::languageChanged, &engine, [&] {
+        engine.retranslate();
+        emit controller.stateChanged();
+        emit controller.asrChanged();
+        emit controller.subtitleFilesChanged();
+        emit controller.audioTracksChanged();
+    });
+    engine.setInitialProperties({
+        {"controller", QVariant::fromValue(&controller)},
+        {"interfaceLanguage", QVariant::fromValue(&interfaceLanguage)},
+        {"openPickerOnStartup", arguments.positionalArguments().isEmpty()}
+    });
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
                      &app, [] { QCoreApplication::exit(1); }, Qt::QueuedConnection);
     engine.loadFromModule("qRepli", "Main");
@@ -63,3 +118,5 @@ int main(int argc, char *argv[])
     }
     return app.exec();
 }
+
+#include "main.moc"

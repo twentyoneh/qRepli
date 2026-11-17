@@ -1,5 +1,6 @@
 #include "subtitles.h"
 
+#include <QCoreApplication>
 #include <QFile>
 #include <QRegularExpression>
 #include <QStringDecoder>
@@ -23,22 +24,22 @@ SubtitleTrack SubtitleTrack::fromFile(const QString &path, QString *error)
     error->clear();
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)) {
-        *error = QStringLiteral("Не удалось открыть субтитры: %1").arg(file.errorString());
+        *error = QCoreApplication::translate("SubtitleTrack", "Не удалось открыть субтитры: %1").arg(file.errorString());
         return {};
     }
     if (file.size() > maxFileSize) {
-        *error = QStringLiteral("Файл субтитров слишком большой. Максимум — 8 МБ.");
+        *error = QCoreApplication::translate("SubtitleTrack", "Файл субтитров слишком большой. Максимум — 8 МБ.");
         return {};
     }
     const QByteArray bytes = file.read(maxFileSize + 1);
     if (file.error() != QFileDevice::NoError || bytes.size() > maxFileSize) {
-        *error = QStringLiteral("Не удалось прочитать файл субтитров.");
+        *error = QCoreApplication::translate("SubtitleTrack", "Не удалось прочитать файл субтитров.");
         return {};
     }
     QStringDecoder decoder(QStringDecoder::Utf8);
     const QString text = decoder.decode(bytes);
     if (decoder.hasError()) {
-        *error = QStringLiteral("Сохраните SRT в кодировке UTF-8 и откройте его снова.");
+        *error = QCoreApplication::translate("SubtitleTrack", "Сохраните SRT в кодировке UTF-8 и откройте его снова.");
         return {};
     }
     return parseSrt(text, error);
@@ -69,17 +70,17 @@ SubtitleTrack SubtitleTrack::parseSrt(const QString &input, QString *error)
         if (number.match(lines.first().trimmed()).hasMatch())
             lines.removeFirst();
         if (lines.size() < 2) {
-            *error = QStringLiteral("SRT: нет текста или времени в блоке %1.").arg(blockNumber);
+            *error = QCoreApplication::translate("SubtitleTrack", "SRT: нет текста или времени в блоке %1.").arg(blockNumber);
             return {};
         }
         const auto match = timing.match(lines.takeFirst().trimmed());
         if (!match.hasMatch()) {
-            *error = QStringLiteral("SRT: неверное время в блоке %1.").arg(blockNumber);
+            *error = QCoreApplication::translate("SubtitleTrack", "SRT: неверное время в блоке %1.").arg(blockNumber);
             return {};
         }
         SubtitleCue cue{timestamp(match, 1), timestamp(match, 5), lines.join(u'\n').trimmed()};
         if (cue.endMs <= cue.startMs) {
-            *error = QStringLiteral("SRT: конец реплики должен быть позже начала (блок %1).")
+            *error = QCoreApplication::translate("SubtitleTrack", "SRT: конец реплики должен быть позже начала (блок %1).")
                          .arg(blockNumber);
             return {};
         }
@@ -88,13 +89,13 @@ SubtitleTrack SubtitleTrack::parseSrt(const QString &input, QString *error)
         cue.text = QTextDocumentFragment::fromHtml(
                        QString(cue.text).replace(u'\n', QStringLiteral("<br>"))).toPlainText().trimmed();
         if (cue.text.isEmpty()) {
-            *error = QStringLiteral("SRT: пустая реплика в блоке %1.").arg(blockNumber);
+            *error = QCoreApplication::translate("SubtitleTrack", "SRT: пустая реплика в блоке %1.").arg(blockNumber);
             return {};
         }
         result.m_cues.append(std::move(cue));
     }
     if (result.isEmpty()) {
-        *error = QStringLiteral("В файле не найдены реплики SRT.");
+        *error = QCoreApplication::translate("SubtitleTrack", "В файле не найдены реплики SRT.");
         return {};
     }
     std::stable_sort(result.m_cues.begin(), result.m_cues.end(),

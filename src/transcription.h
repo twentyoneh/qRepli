@@ -28,7 +28,12 @@ public:
     ~TranscriptionService() override;
     static bool available();
     bool running() const { return m_running; }
-    QString status() const { return m_status; }
+    QString status() const
+    {
+        if (!m_statusSource) return {};
+        const QString text = tr(m_statusSource);
+        return m_statusArgument.isEmpty() ? text : text.arg(m_statusArgument);
+    }
     void start(const TranscriptionRequest &request);
     void cancel();
     void setPosition(qint64 position);
@@ -48,7 +53,7 @@ private:
     void launch();
     void run(const TranscriptionRequest &request, const std::shared_ptr<Control> &control,
              quint64 generation);
-    void postStatus(quint64 generation, const QString &status);
+    void postStatus(quint64 generation, const char *source, const QString &argument = {});
     void postError(quint64 generation, const QString &error);
 
     QThread *m_thread = nullptr;
@@ -57,5 +62,6 @@ private:
     quint64 m_generation = 0;
     qint64 m_position = 0;
     bool m_running = false;
-    QString m_status;
+    const char *m_statusSource = nullptr;
+    QString m_statusArgument;
 };
