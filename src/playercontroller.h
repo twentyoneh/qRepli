@@ -22,6 +22,7 @@ class PlayerController : public QObject
     Q_PROPERTY(bool busy READ busy NOTIFY stateChanged)
     Q_PROPERTY(QString status READ status NOTIFY stateChanged)
     Q_PROPERTY(double volume READ volume WRITE setVolume NOTIFY volumeChanged)
+    Q_PROPERTY(qreal playbackRate READ playbackRate WRITE setPlaybackRate NOTIFY playbackRateChanged)
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString originalText READ originalText NOTIFY subtitleTextChanged)
     Q_PROPERTY(QString translatedText READ translatedText NOTIFY subtitleTextChanged)
@@ -53,11 +54,13 @@ public:
     QString status() const;
     double volume() const { return m_audio.volume(); }
     void setVolume(double volume);
+    qreal playbackRate() const { return m_player.playbackRate(); }
+    void setPlaybackRate(qreal rate);
     QString error() const { return m_error; }
     QString originalText() const { return m_originalText; }
     QString translatedText() const { return m_translatedText; }
-    QString originalFile() const { return m_originalFile; }
-    QString translatedFile() const { return m_translatedFile; }
+    QString originalFile() const { return m_generatedOriginal ? tr("Распознанная речь · EN") : m_originalFile; }
+    QString translatedFile() const { return m_generatedTranslation ? tr("Автоперевод · RU") : m_translatedFile; }
     SubtitleModel *transcript() { return &m_transcript; }
     QStringList audioTracks() const;
     int audioTrack() const { return m_player.activeAudioTrack(); }
@@ -95,6 +98,7 @@ signals:
     void durationChanged();
     void stateChanged();
     void volumeChanged();
+    void playbackRateChanged();
     void errorChanged();
     void subtitleTextChanged();
     void subtitleFilesChanged();
@@ -127,6 +131,7 @@ private:
     bool m_useGpu = true;
     bool m_translateToRussian = true;
     bool m_generatedTranslation = false;
+    bool m_generatedOriginal = false;
     QString m_translationModel;
     bool m_generated = false;
     bool m_playRequested = false;

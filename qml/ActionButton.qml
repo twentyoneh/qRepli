@@ -4,9 +4,10 @@ import QtQuick.Controls
 Button {
     id: control
     property bool accent: false
+    property bool toolbarItem: false
     property string hint: ""
     implicitHeight: 36
-    implicitWidth: Math.max(36, contentItem.implicitWidth + 24)
+    implicitWidth: Math.max(36, contentItem.implicitWidth + (toolbarItem ? 12 : 24))
     hoverEnabled: true
     focusPolicy: Qt.TabFocus
     Accessible.name: hint.length ? hint : text
@@ -16,17 +17,22 @@ Button {
     contentItem: Text {
         text: control.text
         font: control.font
-        color: !control.enabled ? "#586174" : control.accent ? "#0a1920" : "#e4e9f2"
+        color: !control.enabled ? "#8a8e9a" : control.accent ? "#ffffff" : "#eef0f6"
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
+        Behavior on color { ColorAnimation { duration: 140 } }
     }
     background: Rectangle {
-        radius: 8
-        color: control.accent
-               ? (control.down ? "#65c9ba" : control.hovered ? "#a9ebd9" : "#87ddc8")
-               : (control.down || control.checked ? "#303b50" : control.hovered ? "#283245" : "#1c2433")
-        opacity: control.enabled ? 1 : 0.55
-        border.color: control.activeFocus ? "#87ddc8" : "#303a4e"
-        border.width: control.activeFocus ? 2 : 1
+        radius: height / 2
+        color: !control.enabled ? "transparent" : control.accent
+               ? (control.down ? "#2969bc" : control.hovered ? "#448ce5" : "#337bd3")
+               : (control.down || control.checked ? "#35ffffff" : control.hovered ? "#20ffffff"
+                  : control.toolbarItem ? "transparent" : "#15ffffff")
+        border.color: control.visualFocus ? "#93c9ff" : "#24ffffff"
+        border.width: control.visualFocus ? 2 : (control.toolbarItem || !control.enabled ? 0 : 1)
+        scale: control.down ? 0.94 : 1
+        Behavior on color { ColorAnimation { duration: 140 } }
+        Behavior on border.color { ColorAnimation { duration: 140 } }
+        Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
     }
 }

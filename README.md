@@ -28,7 +28,7 @@ Runtime processing does not upload video, audio or text. Subtitles remain in mem
 | --- | --- |
 | Compiler | C++20 support and a C compiler for native dependencies |
 | CMake | 3.25+ for the supplied presets; 3.24+ for manual configuration |
-| Qt | 6.8+ with Quick, QuickControls2, Multimedia and Network; Test when tests are enabled |
+| Qt | 6.8+ with Quick, QuickControls2, Multimedia, Network and LinguistTools; Test when tests are enabled |
 | Build tool | Make, Ninja or a suitable platform generator |
 | FFmpeg | A separate executable for speech recognition |
 | Whisper model | Local `ggml-base.en.bin`, approximately 148 MB |
@@ -60,7 +60,7 @@ cmake --preset dev -DCMAKE_PREFIX_PATH=/path/to/Qt/kit
 Install Xcode Command Line Tools with `xcode-select --install`. If using Homebrew:
 
 ```sh
-brew install cmake qt ffmpeg
+brew install cmake qt qttools ffmpeg
 cmake --preset dev -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
 cmake --build --preset dev --parallel
 ctest --preset dev
@@ -170,7 +170,7 @@ In a second terminal, download the default model once (about 1.9 GB):
 ollama pull qwen2.5:3b
 ```
 
-Keep Ollama running. Open speech settings in qRepli, enable **“Переводить на русский во время просмотра”** (enabled by default), and click **“Распознать и перевести”**. The translation model name can be changed in those settings. The application contacts only `127.0.0.1:11434`, with proxies and redirects disabled. Use a local model and run Ollama with `OLLAMA_NO_CLOUD=1` to disable its cloud functionality.
+Keep Ollama running. Open speech settings in qRepli, enable **“Переводить на русский во время просмотра”** (enabled by default), and choose **“Файл” → “Распознать и перевести”**. The translation model name can be changed in those settings. The application contacts only `127.0.0.1:11434`, with proxies and redirects disabled. Use a local model and run Ollama with `OLLAMA_NO_CLOUD=1` to disable its cloud functionality.
 
 Each audio window is recognized and translated before playback is released. If processing falls behind, the video pauses until Russian subtitles are ready. Manual pause remains respected. Seeking outside the prepared range cancels old work and clears generated English and Russian tracks. Loading a translated SRT during automatic translation stops the active pipeline, preventing generated results from overwriting it.
 
@@ -188,7 +188,7 @@ Details and validation: [local translation](docs/TRANSLATION.md).
 | Fullscreen | F11 or double-click the video |
 | Leave fullscreen | Esc |
 
-The original/translation SRT buttons load existing files; they do not perform translation. Dropping an SRT loads the original track. SRT files must be UTF-8 and no larger than 8 MB.
+Use the **File** menu (••• over the video in the upper-left corner) to load SRT tracks, open the transcript, or start recognition. The gear opens settings for subtitle visibility, audio and speech. Dropping an SRT loads the original track. SRT files must be UTF-8 and no larger than 8 MB.
 
 ## Installation and deployment
 

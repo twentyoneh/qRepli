@@ -1,5 +1,6 @@
 #include "audioextractor.h"
 
+#include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QProcess>
 #include <QtEndian>
@@ -12,7 +13,7 @@ AudioSamples extractAudio(const QString &ffmpeg, const QString &media,
     AudioSamples result;
     if (cancelled.load()) return result;
     if (durationMs <= 0 || durationMs > 30000 || startMs < 0 || audioTrack < 0) {
-        result.error = QStringLiteral("Некорректный диапазон аудио.");
+        result.error = QCoreApplication::translate("AudioExtractor", "Некорректный диапазон аудио.");
         return result;
     }
     QProcess process;
@@ -26,7 +27,7 @@ AudioSamples extractAudio(const QString &ffmpeg, const QString &media,
                           "-af", "aresample=16000:async=1:first_pts=0",
                           "-f", "f32le", "pipe:1"});
     if (!process.waitForStarted(5000)) {
-        result.error = QStringLiteral("Не удалось запустить FFmpeg: %1").arg(process.errorString());
+        result.error = QCoreApplication::translate("AudioExtractor", "Не удалось запустить FFmpeg: %1").arg(process.errorString());
         return result;
     }
     QByteArray output;
@@ -39,7 +40,7 @@ AudioSamples extractAudio(const QString &ffmpeg, const QString &media,
             process.kill();
             process.waitForFinished(5000);
             if (!cancelled.load())
-                result.error = QStringLiteral("FFmpeg превысил время или размер окна обработки.");
+                result.error = QCoreApplication::translate("AudioExtractor", "FFmpeg превысил время или размер окна обработки.");
             return result;
         }
         process.waitForReadyRead(50);
@@ -51,12 +52,12 @@ AudioSamples extractAudio(const QString &ffmpeg, const QString &media,
     diagnostics.append(process.readAllStandardError());
     if (cancelled.load()) return result;
     if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0) {
-        result.error = QStringLiteral("Не удалось извлечь аудио. %1")
+        result.error = QCoreApplication::translate("AudioExtractor", "Не удалось извлечь аудио. %1")
                            .arg(QString::fromUtf8(diagnostics.right(4096)).trimmed());
         return result;
     }
     if (output.size() > byteLimit || output.size() % 4 != 0) {
-        result.error = QStringLiteral("FFmpeg вернул некорректный аудиобуфер.");
+        result.error = QCoreApplication::translate("AudioExtractor", "FFmpeg вернул некорректный аудиобуфер.");
         return result;
     }
     result.pcm.resize(output.size() / 4);

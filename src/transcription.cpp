@@ -40,7 +40,8 @@ void TranscriptionService::start(const TranscriptionRequest &request)
     m_position = request.startMs;
     m_pending = request;
     m_running = true;
-    m_status = QStringLiteral("Подготовка распознавания…");
+    m_statusSource = QT_TR_NOOP("Подготовка распознавания…");
+    m_statusArgument.clear();
     emit stateChanged();
     if (!m_thread) launch();
 }
@@ -52,7 +53,8 @@ void TranscriptionService::cancel()
     m_pending.reset();
     if (m_running) {
         m_running = false;
-        m_status = QStringLiteral("Распознавание остановлено");
+        m_statusSource = QT_TR_NOOP("Распознавание остановлено");
+        m_statusArgument.clear();
         emit stateChanged();
     }
 }
@@ -76,7 +78,7 @@ void TranscriptionService::launch()
             run(request, control, generation);
         } catch (const std::exception &error) {
             if (!control->cancelled.load())
-                postError(generation, QStringLiteral("Ошибка распознавания: %1").arg(QString::fromUtf8(error.what())));
+                postError(generation, tr("Ошибка распознавания: %1").arg(QString::fromUtf8(error.what())));
         }
     });
     connect(m_thread, &QThread::finished, this, [this, generation] {
@@ -92,11 +94,12 @@ void TranscriptionService::launch()
     m_thread->start();
 }
 
-void TranscriptionService::postStatus(quint64 generation, const QString &status)
+void TranscriptionService::postStatus(quint64 generation, const char *source, const QString &argument)
 {
-    QMetaObject::invokeMethod(this, [this, generation, status] {
+    QMetaObject::invokeMethod(this, [this, generation, source, argument] {
         if (generation != m_generation) return;
-        m_status = status;
+        m_statusSource = source;
+        m_statusArgument = argument;
         emit stateChanged();
     }, Qt::QueuedConnection);
 }
@@ -105,7 +108,8 @@ void TranscriptionService::postError(quint64 generation, const QString &error)
 {
     QMetaObject::invokeMethod(this, [this, generation, error] {
         if (generation != m_generation) return;
-        m_status = QStringLiteral("Не удалось распознать речь");
+        m_statusSource = QT_TR_NOOP("Не удалось распознать речь");
+        m_statusArgument.clear();
         emit failed(error);
         emit stateChanged();
     }, Qt::QueuedConnection);
@@ -117,10 +121,10 @@ void TranscriptionService::run(const TranscriptionRequest &request,
 #ifndef QREPLI_HAS_WHISPER
     Q_UNUSED(request)
     Q_UNUSED(control)
-    postError(generation, QStringLiteral("Эта сборка создана без Whisper."));
+    postError(generation, tr("Эта сборка создана без Whisper."));
 #else
     if (control->cancelled.load()) return;
-    postStatus(generation, QStringLiteral("Загрузка модели Whisper…"));
+    postStatus(generation, QT_TR_NOOP("Загрузка модели Whisper…"));
     QElapsedTimer modelTimer;
     modelTimer.start();
     auto contextParams = whisper_context_default_params();
@@ -129,13 +133,13 @@ void TranscriptionService::run(const TranscriptionRequest &request,
     auto context = std::unique_ptr<whisper_context, decltype(&whisper_free)>(
         whisper_init_from_file_with_params(modelPath.constData(), contextParams), whisper_free);
     if (!context && request.useGpu && !control->cancelled.load()) {
-        postStatus(generation, QStringLiteral("Переключение Whisper на CPU…"));
+        postStatus(generation, QT_TR_NOOP("Переключение Whisper на CPU…"));
         contextParams.use_gpu = false;
         context.reset(whisper_init_from_file_with_params(modelPath.constData(), contextParams));
     }
     if (control->cancelled.load()) return;
     if (!context) {
-        postError(generation, QStringLiteral("Не удалось загрузить модель Whisper. Выберите корректный файл ggml-*.bin."));
+        postError(generation, tr("Не удалось загрузить модель Whisper. Выберите корректный файл ggml-*.bin."));
         return;
     }
     qInfo() << "Whisper model loaded in" << modelTimer.elapsed() << "ms";
@@ -161,12 +165,12 @@ void TranscriptionService::run(const TranscriptionRequest &request,
     qint64 offset = request.startMs;
     while (offset < request.durationMs && !control->cancelled.load()) {
         if (offset > control->position.load() + aheadMs) {
-            postStatus(generation, QStringLiteral("Субтитры подготовлены до %1").arg(formatMediaTime(offset)));
+            postStatus(generation, QT_TR_NOOP("Субтитры подготовлены до %1"), formatMediaTime(offset));
             while (offset > control->position.load() + aheadMs && !control->cancelled.load())
                 QThread::msleep(50);
         }
         if (control->cancelled.load()) return;
-        postStatus(generation, QStringLiteral("Чтение аудио · %1").arg(formatMediaTime(offset)));
+        postStatus(generation, QT_TR_NOOP("Чтение аудио · %1"), formatMediaTime(offset));
         const qint64 requestedMs = std::min(chunkMs, request.durationMs - offset);
         auto audio = extractAudio(request.ffmpegPath, request.mediaPath, request.audioTrack,
                                   offset, requestedMs, control->cancelled);
@@ -182,7 +186,7 @@ void TranscriptionService::run(const TranscriptionRequest &request,
         for (float value : audio.pcm) energy += double(value) * value;
         const double rms = audio.pcm.isEmpty() ? 0 : std::sqrt(energy / double(audio.pcm.size()));
         if (audio.pcm.size() >= 1600 && rms > 0.0005) {
-            postStatus(generation, QStringLiteral("Распознавание английской речи · %1").arg(formatMediaTime(offset)));
+            postStatus(generation, QT_TR_NOOP("Распознавание английской речи · %1"), formatMediaTime(offset));
             // Pad very short final windows for Whisper, but clamp their timing below.
             const qint64 audioEnd = offset + audio.pcm.size() / 16;
             if (audio.pcm.size() < 16000) audio.pcm.resize(16000);
@@ -190,7 +194,7 @@ void TranscriptionService::run(const TranscriptionRequest &request,
             inferenceTimer.start();
             if (whisper_full(context.get(), params, audio.pcm.constData(), int(audio.pcm.size())) != 0) {
                 if (!control->cancelled.load())
-                    postError(generation, QStringLiteral("Whisper не смог обработать аудиофрагмент."));
+                    postError(generation, tr("Whisper не смог обработать аудиофрагмент."));
                 return;
             }
             if (control->cancelled.load()) return;
@@ -206,7 +210,7 @@ void TranscriptionService::run(const TranscriptionRequest &request,
         }
         QVector<SubtitleCue> translated;
         if (request.translateToRussian && !cues.isEmpty()) {
-            postStatus(generation, QStringLiteral("Перевод EN → RU · %1").arg(formatMediaTime(offset)));
+            postStatus(generation, QT_TR_NOOP("Перевод EN → RU · %1"), formatMediaTime(offset));
             auto result = translateCues(cues, request.translationModel, control->cancelled);
             if (control->cancelled.load()) return;
             if (!result.error.isEmpty()) {
@@ -224,6 +228,6 @@ void TranscriptionService::run(const TranscriptionRequest &request,
         offset = end;
     }
     if (!control->cancelled.load()) postStatus(generation, request.translateToRussian
-        ? QStringLiteral("Распознавание и перевод завершены") : QStringLiteral("Распознавание завершено"));
+        ? QT_TR_NOOP("Распознавание и перевод завершены") : QT_TR_NOOP("Распознавание завершено"));
 #endif
 }

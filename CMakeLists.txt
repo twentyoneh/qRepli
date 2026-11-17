@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2 Multimedia Network)
-qt_standard_project_setup(REQUIRES 6.8)
+find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
+qt_standard_project_setup(REQUIRES 6.8 I18N_SOURCE_LANGUAGE ru)
 
 option(QREPLI_WHISPER "Build local speech recognition" ON)
 if(QREPLI_WHISPER)
@@ -47,6 +48,14 @@ qt_add_qml_module(qRepli
     QML_FILES qml/Main.qml qml/ActionButton.qml
 )
 target_link_libraries(qRepli PRIVATE qrepli_core Qt6::Quick Qt6::QuickControls2)
+qt_add_translations(qRepli
+    SOURCE_TARGETS qRepli qrepli_core
+    TS_FILES translations/qrepli_en.ts
+    NO_GENERATE_PLURALS_TS_FILE
+    RESOURCE_PREFIX "/i18n"
+    LUPDATE_OPTIONS -locations none
+    LRELEASE_OPTIONS -nounfinished
+)
 set_target_properties(qRepli PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER org.qrepli.app
     MACOSX_BUNDLE_BUNDLE_NAME qRepli

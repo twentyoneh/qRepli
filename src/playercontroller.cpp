@@ -67,6 +67,7 @@ PlayerController::PlayerController(QObject *parent) : QObject(parent)
     });
     connect(&m_player, &QMediaPlayer::durationChanged, this, &PlayerController::durationChanged);
     connect(&m_player, &QMediaPlayer::playbackStateChanged, this, &PlayerController::stateChanged);
+    connect(&m_player, &QMediaPlayer::playbackRateChanged, this, &PlayerController::playbackRateChanged);
     connect(&m_player, &QMediaPlayer::mediaStatusChanged, this, [this](QMediaPlayer::MediaStatus status) {
         if (status == QMediaPlayer::EndOfMedia || status == QMediaPlayer::InvalidMedia)
             m_playRequested = false;
@@ -78,7 +79,7 @@ PlayerController::PlayerController(QObject *parent) : QObject(parent)
     connect(&m_audio, &QAudioOutput::volumeChanged, this, &PlayerController::volumeChanged);
     connect(&m_player, &QMediaPlayer::errorOccurred, this,
             [this](QMediaPlayer::Error, const QString &detail) {
-                setError(QStringLiteral("Не удалось воспроизвести файл. %1").arg(detail));
+                setError(tr("Не удалось воспроизвести файл. %1").arg(detail));
                 emit stateChanged();
             });
 }
@@ -99,12 +100,12 @@ bool PlayerController::busy() const
 
 QString PlayerController::status() const
 {
-    if (!hasMedia()) return QStringLiteral("Откройте видео");
-    if (m_player.mediaStatus() == QMediaPlayer::InvalidMedia) return QStringLiteral("Ошибка файла");
-    if (m_playRequested && waitingForAsr()) return QStringLiteral("Подготовка субтитров…");
-    if (busy()) return QStringLiteral("Загрузка…");
-    if (m_player.mediaStatus() == QMediaPlayer::EndOfMedia) return QStringLiteral("Просмотр завершён");
-    return playing() ? QStringLiteral("Воспроизведение") : QStringLiteral("Пауза");
+    if (!hasMedia()) return tr("Откройте видео");
+    if (m_player.mediaStatus() == QMediaPlayer::InvalidMedia) return tr("Ошибка файла");
+    if (m_playRequested && waitingForAsr()) return tr("Подготовка субтитров…");
+    if (busy()) return tr("Загрузка…");
+    if (m_player.mediaStatus() == QMediaPlayer::EndOfMedia) return tr("Просмотр завершён");
+    return playing() ? tr("Воспроизведение") : tr("Пауза");
 }
 
 void PlayerController::setVolume(double volume)
@@ -115,11 +116,17 @@ void PlayerController::setVolume(double volume)
     QSettings().setValue("volume", clamped);
 }
 
+void PlayerController::setPlaybackRate(qreal rate)
+{
+    if (std::isfinite(rate))
+        m_player.setPlaybackRate(std::clamp(rate, qreal(0.5), qreal(2.0)));
+}
+
 bool PlayerController::openMedia(const QUrl &url)
 {
     const QFileInfo file(url.toLocalFile());
     if (!url.isLocalFile() || !file.isFile() || !file.isReadable()) {
-        setError(QStringLiteral("Выберите доступный локальный видеофайл."));
+        setError(tr("Выберите доступный локальный видеофайл."));
         return false;
     }
     m_playRequested = false;
@@ -138,11 +145,11 @@ bool PlayerController::openMedia(const QUrl &url)
 bool PlayerController::openSubtitles(const QUrl &url, bool translation)
 {
     if (!hasMedia()) {
-        setError(QStringLiteral("Сначала откройте видео."));
+        setError(tr("Сначала откройте видео."));
         return false;
     }
     if (!url.isLocalFile()) {
-        setError(QStringLiteral("Выберите локальный файл SRT."));
+        setError(tr("Выберите локальный файл SRT."));
         return false;
     }
     QString error;
@@ -159,6 +166,7 @@ bool PlayerController::openSubtitles(const QUrl &url, bool translation)
     } else {
         stopTranscription();
         m_original = std::move(track);
+        m_generatedOriginal = false;
         m_originalFile = QFileInfo(url.toLocalFile()).fileName();
     }
     m_transcript.setTrack(m_original.isEmpty() ? m_translated : m_original);
@@ -174,6 +182,7 @@ void PlayerController::clearSubtitles()
     m_original = {};
     m_translated = {};
     m_generatedTranslation = false;
+    m_generatedOriginal = false;
     m_originalFile.clear();
     m_translatedFile.clear();
     m_transcript.setTrack({});
@@ -236,7 +245,7 @@ QStringList PlayerController::audioTracks() const
         const QString language = tracks[i].stringValue(QMediaMetaData::Language);
         if (description.isEmpty()) description = language;
         names.append(description.isEmpty()
-                         ? QStringLiteral("Дорожка %1").arg(i + 1)
+                         ? tr("Дорожка %1").arg(i + 1)
                          : QStringLiteral("%1 · %2").arg(i + 1).arg(description));
     }
     return names;
@@ -277,7 +286,7 @@ void PlayerController::updatePlayback()
 void PlayerController::setWhisperModel(const QUrl &url)
 {
     if (!url.isLocalFile() || !QFileInfo(url.toLocalFile()).isFile()) {
-        setError(QStringLiteral("Выберите локальный файл модели Whisper (.bin)."));
+        setError(tr("Выберите локальный файл модели Whisper (.bin)."));
         return;
     }
     stopTranscription();
@@ -325,19 +334,19 @@ void PlayerController::setTranslationModel(const QString &model)
 void PlayerController::startTranscription()
 {
     if (!asrAvailable()) {
-        setError(QStringLiteral("Эта сборка создана без Whisper."));
+        setError(tr("Эта сборка создана без Whisper."));
         return;
     }
     if (!hasMedia() || !seekable() || duration() <= 0 || audioTrack() < 0) {
-        setError(QStringLiteral("Откройте видео с аудиодорожкой и дождитесь загрузки."));
+        setError(tr("Откройте видео с аудиодорожкой и дождитесь загрузки."));
         return;
     }
     if (!QFileInfo(m_modelPath).isFile()) {
-        setError(QStringLiteral("Сначала выберите модель Whisper в настройках распознавания."));
+        setError(tr("Сначала выберите модель Whisper в настройках распознавания."));
         return;
     }
     if (QStandardPaths::findExecutable(m_ffmpegPath).isEmpty()) {
-        setError(QStringLiteral("FFmpeg не найден. Укажите путь к нему в настройках распознавания."));
+        setError(tr("FFmpeg не найден. Укажите путь к нему в настройках распознавания."));
         return;
     }
     m_generated = true;
@@ -351,11 +360,12 @@ void PlayerController::restartTranscription()
     if (!m_generated) return;
     if (m_translateToRussian || m_generatedTranslation) {
         m_translated = {};
-        m_translatedFile = m_translateToRussian ? QStringLiteral("Автоперевод · RU") : QString();
+        m_translatedFile.clear();
     }
     m_generatedTranslation = m_translateToRussian;
     m_original = {};
-    m_originalFile = QStringLiteral("Распознанная речь · EN");
+    m_originalFile.clear();
+    m_generatedOriginal = true;
     m_transcript.setTrack({});
     // A little preceding audio gives Whisper context after seeking and ensures
     // a run started just after Play also covers time zero when replaying.
@@ -383,20 +393,20 @@ void PlayerController::stopTranscription()
 bool PlayerController::saveOriginal(const QUrl &url)
 {
     if (!url.isLocalFile() || m_original.isEmpty()) {
-        setError(QStringLiteral("Нет оригинальных субтитров для сохранения."));
+        setError(tr("Нет оригинальных субтитров для сохранения."));
         return false;
     }
     // Never allow an export to overwrite the currently opened movie or model.
     const QString destination = QFileInfo(url.toLocalFile()).absoluteFilePath();
     if (QFileInfo(destination) == QFileInfo(m_source.toLocalFile())
         || QFileInfo(destination) == QFileInfo(m_modelPath)) {
-        setError(QStringLiteral("Для субтитров выберите отдельный файл SRT."));
+        setError(tr("Для субтитров выберите отдельный файл SRT."));
         return false;
     }
     QSaveFile file(destination);
     const QByteArray bytes = m_original.toSrt().toUtf8();
     if (!file.open(QIODevice::WriteOnly) || file.write(bytes) != bytes.size() || !file.commit()) {
-        setError(QStringLiteral("Не удалось сохранить субтитры: %1").arg(file.errorString()));
+        setError(tr("Не удалось сохранить субтитры: %1").arg(file.errorString()));
         return false;
     }
     dismissError();
